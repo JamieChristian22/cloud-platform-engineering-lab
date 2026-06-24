@@ -1,0 +1,30 @@
+{
+  "title": "Multi-Cloud Operations Dashboard",
+  "panels": [
+    {
+      "name": "Availability",
+      "metric": "uptime_percentage",
+      "target": "99.9%"
+    },
+    {
+      "name": "Latency",
+      "metric": "p95_latency_ms",
+      "target": "<300ms"
+    },
+    {
+      "name": "Error Rate",
+      "metric": "5xx_rate",
+      "target": "<1%"
+    },
+    {
+      "name": "Deployment Success",
+      "metric": "successful_deployments",
+      "target": ">95%"
+    },
+    {
+      "name": "Security Findings",
+      "metric": "critical_findings",
+      "target": "0"
+    }
+  ]
+}
