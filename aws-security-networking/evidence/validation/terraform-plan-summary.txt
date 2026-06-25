@@ -1,1 +1,0 @@
-Run `terraform plan` and summarize safe changes here.
