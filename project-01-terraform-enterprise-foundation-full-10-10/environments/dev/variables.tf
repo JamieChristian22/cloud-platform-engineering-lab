@@ -1,0 +1,15 @@
+variable "aws_region" { type = string }
+variable "environment" { type = string }
+variable "vpc_name" { type = string }
+variable "vpc_cidr" { type = string }
+variable "public_subnet_cidr" { type = string }
+variable "private_subnet_cidr" { type = string }
+variable "public_availability_zone" { type = string }
+variable "private_availability_zone" { type = string }
+variable "security_group_name" { type = string }
+variable "ssh_allowed_cidrs" { type = list(string) }
+variable "instance_name" { type = string }
+variable "instance_type" { type = string }
+variable "sns_topic_name" { type = string }
+variable "cpu_alarm_name" { type = string }
+variable "cpu_threshold" { type = number }
