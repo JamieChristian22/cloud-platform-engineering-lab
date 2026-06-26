@@ -1,0 +1,3 @@
+aws_region      = "us-east-1"
+sns_topic_name  = "enterprise-ops-alerts"
+dashboard_name  = "Enterprise-Platform-Operations"
