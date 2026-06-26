@@ -1,1 +1,0 @@
-Use the Lucidchart prompt from the chat.
