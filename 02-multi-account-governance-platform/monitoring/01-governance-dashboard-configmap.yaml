@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: governance-dashboard-notes
+  namespace: security-operations
+data:
+  dashboard-objectives.md: |
+    # Kubernetes Governance Dashboard Objectives
+
+    Track these controls for portfolio evidence:
+    - Namespace inventory by OU label
+    - Pods missing owner, environment, or cost-center labels
+    - Resource quota usage by namespace
+    - NetworkPolicy coverage by namespace
+    - RBAC bindings by group
+    - Policy-as-code violations from Kyverno or Gatekeeper
