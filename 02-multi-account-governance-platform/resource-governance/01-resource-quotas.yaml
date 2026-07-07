@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: workload-production-quota
+  namespace: workload-production
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    pods: "50"
+    services: "20"
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: workload-development-quota
+  namespace: workload-development
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi
+    pods: "30"
+    services: "10"
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: sandbox-lab-quota
+  namespace: sandbox-lab
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    limits.cpu: "4"
+    limits.memory: 8Gi
+    pods: "15"
+    services: "5"

@@ -1,0 +1,24 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-governance-labels
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-owner-costcenter-environment
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - Service
+      validate:
+        message: "Resources must include owner, cost-center, and environment labels."
+        pattern:
+          metadata:
+            labels:
+              owner: "?*"
+              cost-center: "?*"
+              environment: "?*"
