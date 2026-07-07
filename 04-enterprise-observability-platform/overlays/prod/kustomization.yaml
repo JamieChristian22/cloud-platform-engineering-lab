@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../../manifests/base
+  - ../../../../manifests/security
+  - ../../../../manifests/networking
+  - ../../../../manifests/monitoring
+  - ../../../../manifests/logging
+  - ../../../../manifests/autoscaling
+
+commonLabels:
+  environment: prod
+
+replicas:
+  - name: prometheus
+    count: 2
+  - name: grafana
+    count: 2
+  - name: alertmanager
+    count: 2
