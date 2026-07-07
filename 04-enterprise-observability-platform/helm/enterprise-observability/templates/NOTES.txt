@@ -1,5 +1,0 @@
-Enterprise Observability Platform installed.
-
-Check resources:
-
-kubectl get all -n {{ .Values.namespace }}
