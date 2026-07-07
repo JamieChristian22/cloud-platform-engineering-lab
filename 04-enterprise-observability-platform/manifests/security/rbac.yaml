@@ -1,0 +1,26 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: observability-readonly
+  namespace: observability
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "endpoints", "configmaps", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "daemonsets", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: observability-readonly-binding
+  namespace: observability
+subjects:
+  - kind: ServiceAccount
+    name: observability-reader
+    namespace: observability
+roleRef:
+  kind: Role
+  name: observability-readonly
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,17 @@
+namespace: observability
+
+prometheus:
+  replicas: 2
+  image: prom/prometheus:v2.53.0
+  retention: 15d
+
+grafana:
+  replicas: 2
+  image: grafana/grafana:11.1.0
+
+alertmanager:
+  replicas: 2
+  image: prom/alertmanager:v0.27.0
+
+resources:
+  enabled: true

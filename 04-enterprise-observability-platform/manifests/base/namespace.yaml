@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    platform: enterprise-observability
+    environment: shared
+    owner: platform-engineering

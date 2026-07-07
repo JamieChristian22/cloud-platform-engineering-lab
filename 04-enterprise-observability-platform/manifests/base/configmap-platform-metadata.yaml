@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: observability-platform-metadata
+  namespace: observability
+data:
+  platform: "enterprise-observability"
+  owner: "platform-engineering"
+  purpose: "centralized monitoring, logging, metrics, and alerting"
+  data-classification: "internal"
