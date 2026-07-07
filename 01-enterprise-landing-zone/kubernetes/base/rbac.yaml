@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: enterprise-web-readonly
+  namespace: enterprise-landing-zone
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: enterprise-web-readonly-binding
+  namespace: enterprise-landing-zone
+subjects:
+  - kind: ServiceAccount
+    name: enterprise-web-sa
+    namespace: enterprise-landing-zone
+roleRef:
+  kind: Role
+  name: enterprise-web-readonly
+  apiGroup: rbac.authorization.k8s.io

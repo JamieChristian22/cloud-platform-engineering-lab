@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: enterprise-web-config
+  namespace: enterprise-landing-zone
+data:
+  APP_NAME: "enterprise-web-platform"
+  ENVIRONMENT: "platform"
+  LOG_LEVEL: "info"
+  WELCOME_MESSAGE: "AWS Enterprise Landing Zone Kubernetes workload is running."

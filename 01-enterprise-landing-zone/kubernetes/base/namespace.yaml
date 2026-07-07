@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: enterprise-landing-zone
+  labels:
+    app.kubernetes.io/name: enterprise-landing-zone
+    app.kubernetes.io/part-of: cloud-platform-engineering-lab
+    environment: platform

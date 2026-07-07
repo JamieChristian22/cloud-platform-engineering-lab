@@ -1,0 +1,7 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-web
+  namespace: enterprise-landing-zone
+spec:
+  replicas: 3
