@@ -235,6 +235,18 @@ Examples include:
 
 ---
 
+## Security and Evidence Integrity
+
+This repository includes live-console lab documentation alongside simulation-oriented architecture and runbooks. **No screenshots should disclose real secrets, account identifiers, or session details.**
+
+- [Public security review and screenshot guidance](PUBLIC_SECURITY_REVIEW.md)
+- [Secrets-handling standard](03-shared-services-platform/security/secrets-handling.md)
+- [Automated text-pattern and screenshot filename scan](.github/workflows/security-hygiene.yml)
+
+The previously published Secrets Manager secret-value screenshot has been withdrawn from the current branch and replaced by a [privacy-safe illustration](03-shared-services-platform/screenshots/17-secret-value-redacted.svg). The illustration is not a live-console capture. Previous Git commits may still contain older artifacts, so this should **not** be considered full historical erasure. The security scan does not inspect image pixels or cloud account configuration.
+
+---
+
 # 📸 Evidence
 
 Each project contains evidence demonstrating deployment and validation.
