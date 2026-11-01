@@ -45,7 +45,7 @@ Shared platform services include Systems Manager, Secrets Manager, ACM, ECR, Clo
 
 ## Screenshot Evidence
 
-Screenshots should be placed in the `screenshots/` folder.
+Screenshots should be placed in the `screenshots/` folder only after reviewing them for account identifiers, credentials, tokens, sensitive browser details, and resource metadata. A redacted illustrative replacement is provided for the former Secrets Manager secret-value view; the historical screenshot was withdrawn from the current branch.
 
 Required screenshots:
 
@@ -65,7 +65,7 @@ Required screenshots:
 - 14-managed-node-online.png
 - 15-session-manager-connected.png
 - 16-secret-created.png
-- 17-secret-value.png
+- [17-secret-value-redacted.svg](screenshots/17-secret-value-redacted.svg) — privacy-safe illustration (not a live AWS console screenshot)
 - 18-certificate-requested.png
 - 19-ecr-repository-created.png
 - 20-ecr-push-commands.png
