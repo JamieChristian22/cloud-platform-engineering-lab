@@ -1,21 +1,31 @@
-# Deployment Evidence
+# Evidence collection guide
 
-Store screenshots in the `screenshots/` folder using these names:
+Historical screenshots are not proof of the current canonical Terraform revision. Capture new evidence only from a **real deployment**, and keep sensitive raw records in an access-controlled location.
 
-- 01-budget-created.png
-- 02-vpc-created.png
-- 03-public-subnet.png
-- 04-private-subnet.png
-- 05-igw-attached.png
-- 06-route-table.png
-- 07-security-group.png
-- 08-iam-groups.png
-- 09-ec2-running.png
-- 10a-ssh-connected.png
-- 10b-apache-installed.png
-- 11-website-working.png
-- 12-cloudtrail-enabled.png
-- 13a-sns-topic-created.png
-- 13b-sns-subscription-confirmed.png
-- 14-cloudwatch-alarm.png
-- 15-architecture-diagram.png
+## Required per-test metadata
+
+- UTC date/time, repository commit SHA and CI run URL
+- AWS account alias (not raw credentials), region, Terraform version and provider versions
+- Test name, precise command and parameters, expected result, actual result and exit code
+- Sanitized output or screenshot; an explicit PASS/FAIL/NOT-RUN with reviewer notes
+- Cost impact and cleanup status
+
+## Suggested execution record
+
+```text
+Test: CloudTrail delivery and KMS decryption
+Git SHA:
+Timestamp (UTC):
+AWS sandbox/region:
+Command(s):
+Expected:
+Observed (redacted):
+Exit code:
+Result: NOT RUN
+Reviewer:
+Remediation:
+```
+
+Verify actual live IAM/SSM access, VPC route tables, CloudTrail status **and object delivery**, S3 encryption, Flow Logs, CloudWatch alarm/SNS receipt, AWS Budgets, and the EC2 web endpoint. Record rejected permission/KMS errors as failures, not success.
+
+Never commit `tfplan`, `terraform.tfstate`, `.tfvars` with real values, secret ARN values, key material or raw CloudTrail logs.
