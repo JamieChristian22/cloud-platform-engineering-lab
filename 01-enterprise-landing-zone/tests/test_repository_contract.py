@@ -16,7 +16,7 @@ class LandingZoneContract(unittest.TestCase):
         self.assertFalse((ROOT / "terraform" / "provider.tf").exists())
 
     def test_scripts_use_canonical_root(self):
-        for name in ("bootstrap", "validate", "plan", "deploy", "destroy", "smoke-test"):
+        for name in ("bootstrap", "validate", "plan", "deploy", "destroy", "smoke-test", "verify-aws"):
             with self.subTest(name=name):
                 script = (ROOT / "scripts" / (name + ".sh")).read_text()
                 self.assertIn("terraform/terraform", script)
