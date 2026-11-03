@@ -35,6 +35,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "audit" {
   rule {
     id     = "archive-audit-logs"
     status = "Enabled"
+    filter {}
     transition {
       days          = 30
       storage_class = "STANDARD_IA"
@@ -60,6 +61,7 @@ resource "aws_s3_bucket_policy" "audit" {
         Principal = { Service = "cloudtrail.amazonaws.com" }
         Action = "s3:GetBucketAcl"
         Resource = aws_s3_bucket.audit.arn
+        Condition = { StringEquals = { "aws:SourceArn" = "arn:aws:cloudtrail:${var.aws_region}:${data.aws_caller_identity.current.account_id}:trail/${local.name_prefix}-trail" } }
       },
       {
         Sid = "AWSCloudTrailWrite"
@@ -67,7 +69,15 @@ resource "aws_s3_bucket_policy" "audit" {
         Principal = { Service = "cloudtrail.amazonaws.com" }
         Action = "s3:PutObject"
         Resource = "${aws_s3_bucket.audit.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
-        Condition = { StringEquals = { "s3:x-amz-acl" = "bucket-owner-full-control" } }
+        Condition = { StringEquals = { "s3:x-amz-acl" = "bucket-owner-full-control", "aws:SourceArn" = "arn:aws:cloudtrail:${var.aws_region}:${data.aws_caller_identity.current.account_id}:trail/${local.name_prefix}-trail" } }
+      },
+      {
+        Sid       = "DenyNonTLSConnections"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource  = [aws_s3_bucket.audit.arn, "${aws_s3_bucket.audit.arn}/*"]
+        Condition = { Bool = { "aws:SecureTransport" = "false" } }
       }
     ]
   })
@@ -94,8 +104,8 @@ resource "aws_iam_role_policy" "flow_logs" {
     Version = "2012-10-17"
     Statement = [{
       Effect = "Allow"
-      Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"]
-      Resource = "*"
+      Action = ["logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"]
+      Resource = aws_cloudwatch_log_group.flow.arn
     }]
   })
 }
@@ -105,6 +115,7 @@ resource "aws_flow_log" "vpc" {
   log_destination = aws_cloudwatch_log_group.flow.arn
   traffic_type    = "ALL"
   vpc_id          = aws_vpc.main.id
+  depends_on      = [aws_iam_role_policy.flow_logs]
 }
 
 resource "aws_cloudtrail" "main" {
@@ -114,5 +125,5 @@ resource "aws_cloudtrail" "main" {
   is_multi_region_trail         = true
   enable_log_file_validation    = true
   kms_key_id                    = aws_kms_key.logs.arn
-  depends_on                    = [aws_s3_bucket_policy.audit]
+  depends_on                    = [aws_s3_bucket_policy.audit, aws_s3_bucket_server_side_encryption_configuration.audit]
 }
