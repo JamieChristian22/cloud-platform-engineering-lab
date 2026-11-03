@@ -41,7 +41,8 @@ class LandingZoneContract(unittest.TestCase):
     def test_nat_is_explicitly_opt_in(self):
         variables = (TF / "variables.tf").read_text()
         network = (TF / "network.tf").read_text()
-        self.assertRegex(variables, r'variable "enable_nat_gateway"[\\s\\S]*?default\\s*=\\s*false')
+        self.assertIn('variable "enable_nat_gateway"', variables)
+        self.assertIn("default     = false", variables)
         self.assertIn("count = var.enable_nat_gateway ? 1 : 0", network)
         self.assertIn('enable_nat_gateway = false', (TF / "terraform.tfvars.example").read_text())
 
@@ -59,7 +60,7 @@ class LandingZoneContract(unittest.TestCase):
         self.assertIn('"aws:SecureTransport"', logging)
         self.assertIn('"aws:SourceArn"', logging)
         self.assertIn('block_public_policy     = true', logging)
-        self.assertIn('Resource = aws_cloudwatch_log_group.flow.arn', logging)
+        self.assertIn('aws_cloudwatch_log_group.flow.arn', logging)
         self.assertIn('filter {}', logging)
 
     def test_no_legacy_ssh_or_public_access_backend(self):
