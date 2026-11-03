@@ -39,6 +39,11 @@ variable "monthly_budget_usd" {
     error_message = "monthly_budget_usd must be positive."
   }
 }
+variable "enable_nat_gateway" {
+  description = "Opt in to a billable single-AZ NAT gateway for private subnet egress. Disabled by default for a low-cost lab."
+  type        = bool
+  default     = false
+}
 variable "instance_type" {
   description = "EC2 instance type for the demonstration workload."
   type        = string
