@@ -5,9 +5,4 @@ resources:
 namePrefix: dev-
 patches:
   - path: patch-replicas.yaml
-configMapGenerator:
-  - name: enterprise-web-config
-    behavior: merge
-    literals:
-      - ENVIRONMENT=dev
-      - LOG_LEVEL=debug
+  - path: patch-configmap.yaml
