@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-URL="$(terraform -chdir="$ROOT/terraform" output -raw web_url)"
+TF="$ROOT/terraform/terraform"
+URL="$(terraform -chdir="$TF" output -raw web_url)"
+[[ "$URL" == http://* || "$URL" == https://* ]] || { echo "Unexpected URL scheme" >&2; exit 1; }
 for attempt in {1..20}; do
-  if response="$(curl --fail --silent --show-error --max-time 10 "$URL")"; then
-    grep -q "AWS Enterprise Landing Zone" <<<"$response"
-    printf 'Smoke test passed: %s\n' "$URL"
+  if response="$(curl --fail --silent --show-error --max-time 10 "$URL")" && grep -q "AWS Enterprise Landing Zone" <<<"$response"; then
+    echo "Smoke test passed for configured web endpoint."
     exit 0
   fi
-  printf 'Attempt %s failed; retrying in 15 seconds...\n' "$attempt"
+  echo "Attempt $attempt failed; retrying in 15 seconds..."
   sleep 15
 done
 echo "Smoke test failed after 20 attempts." >&2
