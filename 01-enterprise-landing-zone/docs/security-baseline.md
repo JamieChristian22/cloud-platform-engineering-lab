@@ -18,4 +18,4 @@ The code does **not** prove that live CloudTrail/SNS/KMS integration, IAM access
 
 ## Before adapting for production
 
-Use isolated multi-account structure with organizational guardrails, IAM Identity Center, workload/private ingress behind TLS, multiple NAT gateways or network endpoints, selective egress, explicit log retention and access reviews, tests of alarm publication, and cost/availability modeling. Run Checkov/TFLint alongside signed CI checks and review exceptions rather than suppressing failures without explanation.
+Use isolated multi-account structure with organizational guardrails, IAM Identity Center, workload/private ingress behind TLS, multiple NAT gateways or network endpoints, selective egress, explicit log retention and access reviews, tests of alarm publication, and cost/availability modeling. Run Checkov/TFLint alongside pinned-action CI checks and review exceptions rather than suppressing failures without explanation.
