@@ -19,7 +19,7 @@ class ScriptSafetyTests(unittest.TestCase):
         self.scripts = self.root / "scripts"
         self.scripts.mkdir()
         for script in ("plan.sh", "deploy.sh", "destroy.sh"):
-            shutil.copyfile(SOURCE / script, self.scripts / script.name)
+            shutil.copyfile(SOURCE / script, self.scripts / script)
         self.tf = self.root / "terraform" / "terraform"
         self.tf.mkdir(parents=True)
         self.bin = self.root / "bin"
