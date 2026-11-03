@@ -36,9 +36,13 @@ jobs:
         with:
           terraform_version: '1.9.8'
           terraform_wrapper: false
-      - name: Terraform formatting
-        run: terraform -chdir=01-enterprise-landing-zone/terraform/terraform fmt -check -recursive
+      - name: Format Terraform for full syntax validation
+        run: terraform -chdir=01-enterprise-landing-zone/terraform/terraform fmt -recursive
       - name: Initialize without state backend
         run: terraform -chdir=01-enterprise-landing-zone/terraform/terraform init -backend=false -input=false
       - name: Terraform provider schema validation
         run: terraform -chdir=01-enterprise-landing-zone/terraform/terraform validate -no-color
+      - name: Verify committed Terraform formatting
+        run: |
+          git diff -- 01-enterprise-landing-zone/terraform/terraform
+          git diff --exit-code -- 01-enterprise-landing-zone/terraform/terraform
