@@ -35,9 +35,17 @@ resource "aws_s3_bucket_lifecycle_configuration" "audit" {
   rule {
     id     = "archive-audit-logs"
     status = "Enabled"
-    transition { days = 30, storage_class = "STANDARD_IA" }
-    transition { days = 90, storage_class = "GLACIER" }
-    expiration { days = 365 }
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+    transition {
+      days          = 90
+      storage_class = "GLACIER"
+    }
+    expiration {
+      days = 365
+    }
   }
 }
 
