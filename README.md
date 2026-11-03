@@ -353,3 +353,7 @@ This project is licensed under the MIT License.
 ⭐ If you find this repository useful, consider giving it a star.
 
 </div>
+
+## License and third-party materials
+
+See [LICENSE](LICENSE) for the repository license. Third-party code, datasets, images, and other assets retain their respective terms.
