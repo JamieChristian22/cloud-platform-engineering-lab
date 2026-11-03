@@ -52,6 +52,12 @@ kubernetes/
     └── kubernetes-runbook.md
 ```
 
+## Security and deployment boundaries
+
+This is an **independent workload example**, not an EKS or Kubernetes control-plane deployment. The NetworkPolicy limits HTTP ingress to same-namespace pods and a labeled `ingress-nginx` controller, and allows DNS egress to the labeled `kube-system` DNS pods. It assumes your cluster CNI enforces Kubernetes NetworkPolicy and uses the listed namespace/pod labels; confirm them in the target cluster before deployment.
+
+The sample ingress exposes HTTP only, does not provision TLS certificates, and the NGINX image is referenced by a mutable tag. Pin a tested digest, configure TLS, run image vulnerability scans, and test readiness probes/admission controls before production. A successful `kubectl kustomize` render **does not** prove cluster admission or functioning network enforcement.
+
 ## Prerequisites
 
 - Kubernetes cluster access
