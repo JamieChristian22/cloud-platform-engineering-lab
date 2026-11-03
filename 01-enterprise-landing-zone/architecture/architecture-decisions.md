@@ -1,52 +1,29 @@
-# Architecture Decisions
+# Architecture decisions — current Terraform design
 
-## Decision 1: Single VPC Foundation
+## Scope: one AWS account, not an organizational landing zone
 
-The landing zone uses one VPC with CIDR `10.0.0.0/16`.
+This lab uses one VPC (`10.0.0.0/16` default) with two public and two private subnets across two available AZs. It is an instructional landing-zone *foundation*; there is no AWS Organizations/Control Tower, cross-account identity, SCP or shared-services account.
 
-### Reason
-A single VPC is simple enough for a portfolio project while still demonstrating enterprise network design fundamentals.
+## NAT gateway is off by default
 
-## Decision 2: Public and Private Subnet Segmentation
+Private subnet internet egress is absent unless `enable_nat_gateway=true`. When enabled, **one** NAT in the first public subnet provides egress, which is cheaper but not availability-zone redundant. A production architecture needs per-AZ egress/VPC endpoints based on risk and cost.
 
-The environment separates workloads into:
-- Public subnet: internet-facing resources
-- Private subnet: internal resources
+## Public HTTP demonstration
 
-### Reason
-This shows network segmentation and prepares the design for future application tiers.
+The EC2 Apache instance runs in the first public subnet to make a smoke test possible. HTTP port 80 is open to the internet, and IPv4 egress is broad. This is a **disposable lab pattern**, not a model for a sensitive workload. Adopt TLS with an ALB and private compute for production.
 
-## Decision 3: EC2 Web Server in Public Subnet
+## Identity without inbound SSH
 
-The EC2 instance is placed in the public subnet for direct browser validation.
+The instance has an IAM role attached to `AmazonSSMManagedInstanceCore`, requires IMDSv2 and uses encrypted gp3 storage. There is no inbound SSH ingress and no managed IAM user groups. Operator Session Manager permissions are managed outside this repository.
 
-### Reason
-This provides visible proof that the network, route table, security group, and web server are working.
+## Audit, alerting and encryption
 
-## Decision 4: SSH Restricted to My IP
+CloudTrail is multi-region with log-file validation and S3/KMS encryption. VPC Flow Logs target encrypted CloudWatch Logs. The S3 bucket denies non-TLS traffic and does not allow force destruction. SNS is encrypted with a customer-managed key permitting CloudWatch Alarms service use. **Live AWS log and email delivery remains to be tested.**
 
-SSH access is restricted to the administrator's current IP.
+## Cost/governance decisions
 
-### Reason
-This reduces exposure and follows basic security best practices.
+AWS Budgets sends forecasted notifications (defaults: $25, 50/80/100%). Budgets are not account spending limits. S3 current-version lifecycle expiration is set to 365 days for demonstration; legal hold, noncurrent versions, and compliance retention are not addressed.
 
-## Decision 5: Multi-Region CloudTrail
+## Evidence and changes
 
-CloudTrail is configured as a multi-region trail.
-
-### Reason
-This improves audit coverage across AWS regions.
-
-## Decision 6: CloudWatch + SNS Alerting
-
-CloudWatch alarm sends notifications to SNS.
-
-### Reason
-This demonstrates operational monitoring and alerting workflow.
-
-## Decision 7: AWS Budget
-
-AWS Budget is included for cost governance.
-
-### Reason
-Enterprise cloud environments require financial controls and alerting.
+The PNG architecture diagram and older manual screenshots may depict an earlier one-public/one-private subnet environment. Treat source code and [validation matrix](../docs/VALIDATION_MATRIX.md) as authoritative; update/replace legacy imagery only after verified deployment.
