@@ -1,61 +1,56 @@
-# AWS Enterprise Landing Zone — Terraform & Kubernetes Lab
+# AWS Landing Zone | Infrastructure as Code & Platform Validation
 
-An **AWS single-account, production-inspired lab**, not a fully governed multi-account enterprise landing zone or verified production deployment. This project models VPC networking, a public demonstration web workload, SSM-based administration, audit logging, alerts, budget controls and a separately deployable Kubernetes workload layer.
+**Status:** reviewed source-code lab and automated validation; **live AWS apply not yet independently verified**. This is a **single-account, enterprise-inspired AWS platform demo**, not an AWS Organizations multi-account landing zone or a production-certification claim.
 
-## Start here
+## Design overview
 
-- [Canonical Terraform root](terraform/terraform/) — the **only** Terraform configuration used by the project scripts.
-- [Validation matrix and evidence standards](docs/VALIDATION_MATRIX.md)
-- [Architecture decisions](architecture/architecture-decisions.md)
-- [Kubernetes workload layer](kubernetes/README.md) — requires an existing Kubernetes cluster; this Terraform does **not** provision EKS.
-- [Operational scripts](scripts/)
+The canonical Terraform root is **[`terraform/terraform/`](terraform/terraform/)**. There are no parallel Terraform configurations. The platform defines:
 
-## Architecture in code
+| Layer | Implemented in code | Design boundary |
+|---|---|---|
+| Networking | VPC, two public and two private subnets across available AZs, internet gateway, route tables | NAT is **opt-in**; when disabled, private subnets have no default internet route |
+| Compute | Amazon Linux 2023 EC2 web demo with IMDSv2, SSM instance profile, encrypted gp3 root volume | Public IPv4 and plaintext HTTP are **lab-only** |
+| Security | No SSH inbound, KMS encryption policies, private audit bucket, HTTPS-only bucket access | Single account; no AWS Organizations/Control Tower, SCPs, WAF or TLS endpoint |
+| Audit | Multi-region CloudTrail, S3 encryption/versioning, VPC Flow Logs to encrypted CloudWatch Logs | KMS delivery and real log ingestion require account-level verification |
+| Operations | CloudWatch CPU alarm, customer-managed-key SNS alerts, cost budget notifications | Email subscriptions must be confirmed; alarms must be tested |
+| Kubernetes | Kustomize dev/prod overlays, workload hardening, HPA/PDB/NetworkPolicy | Kubernetes cluster and EKS **not** provisioned by Terraform |
 
-Two public and two private subnets in a single VPC, two availability zones, **one** NAT gateway, an EC2 Apache demo server in a public subnet, IAM instance profile for AWS Systems Manager, S3/CloudTrail audit storage, VPC Flow Logs, CloudWatch/SNS alerts and an AWS Budget.
+[Architecture decisions](architecture/architecture-decisions.md) · [Implementation guide](docs/implementation-guide.md) · [Security baseline](docs/security-baseline.md) · [Operations runbook](docs/operations-runbook.md) · [Validation/evidence matrix](docs/VALIDATION_MATRIX.md)
 
-**Tradeoffs:** one NAT gateway creates an availability dependency; the demo server uses HTTP rather than HTTPS; this is not a multi-account AWS Organizations landing zone. Kubernetes manifests are a separate workload example, not a deployed cluster.
-
-## Local validation (no AWS deployment)
-
-Prerequisites: Python 3.11+, Terraform 1.7+, AWS provider download access for Terraform validation.
+## Offline checks (no AWS billing or credentials needed for tests)
 
 ```bash
-python -m unittest discover -s tests -v
+python3 -m unittest discover -s tests -v
 make validate
 cd kubernetes && ./scripts/validate.sh
 ```
 
-`make validate` runs Terraform formatting, init without backend, and validate against `terraform/terraform`. Optional tflint/checkov/shellcheck run when installed. Validation is not a substitute for a cloud deployment.
+Python checks cover deployment-script safety and source invariants. Terraform validation needs Terraform >= 1.7 and network access to provider downloads. Optional TFLint, Checkov and ShellCheck are used when installed. The repository GitHub Actions workflow runs repository tests, shell syntax checks, Terraform format/init/validate, and Kubernetes rendering.
 
-## Deployment — creates billable AWS resources
-
-Use a sandbox account with budget alerts. AWS authentication and appropriate IAM permissions are required.
+## Deploy in an isolated AWS sandbox (billable)
 
 ```bash
 cp terraform/terraform/terraform.tfvars.example terraform/terraform/terraform.tfvars
-# Edit notification_email and other variables; do not commit the tfvars.
+# Set a real notification_email and review budget, region and instance type.
+# NAT costs extra; enable_nat_gateway=false is the recommended lab default.
 make bootstrap
 make plan
-# Review terraform/terraform/tfplan locally before approving.
+# Inspect terraform/terraform/tfplan before applying. Do not commit plan/state files.
 make deploy
 make test
 ```
 
-The apply script requires an existing plan and does **not** use `-auto-approve`. Terraform plans and state can contain secrets and must never be committed. Confirm SNS email subscriptions separately. `make destroy` prompts before destruction; the audit bucket is protected from force-destruction and may need separate retention-aware cleanup.
+**Do not** run this against an account with existing Terraform-managed infrastructure until you review the state addresses and migration implications. Use separate, securely locked/encrypted state for shared workflows. `make deploy` requires a saved plan and will not regenerate one implicitly. `make destroy` prompts, and the audit bucket intentionally blocks force deletion; review retained evidence and AWS billing after cleanup.
 
-## Evidence and claims
+## Evidence rules
 
-Historical screenshots and older manual instructions describe a **different, simpler** configuration and should not be used as proof that this canonical Terraform configuration was deployed. See [validation matrix](docs/VALIDATION_MATRIX.md) for required live evidence. Existing narrative claims are educational and not current execution attestations.
+- [Live acceptance checklist](evidence/project-completion-checklist.md): incomplete until a deployment is actually performed.
+- [Recorded validation status](evidence/validation-results.md): distinguishes verified CI steps from pending AWS tests.
+- [Evidence collection guide](evidence/deployment-evidence.md): exact commands, dates and sanitized outputs, **not** unverified screenshots or invented results.
+- Legacy console/SSH guides in individual subject folders describe earlier manual work and **are not the authoritative Terraform deployment**.
 
-## Security notes
+## Limitations and security
 
-- No public SSH ingress in the canonical configuration. Manage EC2 with Systems Manager Session Manager when available.
-- S3 audit bucket blocks public access and does not force-delete objects.
-- EC2 requires IMDSv2 and encrypted root storage.
-- Audit KMS key access, CloudTrail delivery, and log retention before using this design beyond a lab.
-- The example notification email is a placeholder. Never commit secrets or state.
+The NAT gateway is disabled by default to limit charges. If enabled, it is **one** NAT gateway and therefore not highly available. The public demo serves HTTP, not HTTPS; this must not be treated as a production access pattern. The audit bucket has a 365-day current-object expiration policy and versioning; retention suitability, noncurrent-object costs, regulatory requirements and key policies need an account-specific review. State and plans can include secrets; store them outside the repository.
 
-## License
-
-See the repository [LICENSE](../LICENSE) and third-party asset rights documentation.
+**No main-branch changes or AWS deployments occur automatically because this documentation or the CI workflow exists.**
