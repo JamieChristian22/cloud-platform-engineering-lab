@@ -1,32 +1,11 @@
-# Skills Demonstrated
+# Skills represented by artifacts
 
-## Cloud Engineering
-- VPC design
-- Subnetting
-- EC2 deployment
-- Internet Gateway configuration
-- Route table management
+These are code/design capabilities demonstrated by repository content, not a claim of independently verified AWS production operations.
 
-## Platform Engineering
-- Landing zone foundation
-- Governance controls
-- Operational documentation
-- Monitoring and alerting
+- **IaC and platform:** Terraform source modules, plan/apply workflow, state awareness, VPC/subnet routing, optional NAT and cost controls.
+- **Security:** SSM instance profile, no inbound SSH, IMDSv2, encrypted EBS, S3 access restrictions and service KMS key policies.
+- **Observability:** CloudTrail, VPC Flow Logs, CloudWatch alarms/SNS notification wiring and operational runbooks.
+- **Quality:** GitHub Actions, Terraform fmt/init/validate, Python repository regression tests and deployment safety guards.
+- **Kubernetes:** Kustomize overlays and workload security manifests, independently of EKS provisioning.
 
-## Cloud Security
-- IAM groups
-- Security groups
-- SSH restriction
-- CloudTrail audit logging
-
-## DevOps / SRE
-- Linux administration
-- Apache deployment
-- CloudWatch alarm
-- SNS notification workflow
-- Runbook creation
-
-## FinOps
-- Budget creation
-- Cost alerting
-- Cleanup planning
+Not yet evidenced: production deployment, load testing, compliance certification, live service integration acceptance or verified AWS spending.
