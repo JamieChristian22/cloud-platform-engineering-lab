@@ -1,161 +1,40 @@
-# Implementation Guide
+# Canonical Terraform implementation guide
 
-## 1. Cost Governance
+This replaces the older one-subnet, SSH/key-pair console tutorial. **Only `terraform/terraform/` is an active Terraform root.** The neighboring `networking/`, `compute/` and `screenshots/` folders are historical learning notes, not a deployment contract.
 
-Create AWS Budget:
-- Name: `enterprise-budget`
-- Budget type: Monthly cost budget
-- Amount: `$5`
-- Alerts: 50%, 80%, 100%
-- Notification: email
+## Prerequisites and risk
 
-## 2. VPC
+- Terraform >= 1.7, Python >= 3.11, AWS CLI v2, secure AWS authentication, appropriate IAM permissions, and an isolated sandbox account.
+- Review service pricing before proceeding. EC2, NAT (when enabled), CloudTrail/S3/KMS, CloudWatch and public IPv4 can create costs. An AWS Budget **alerts** but does not cap charges.
+- Use an encrypted and access-controlled Terraform backend with state locking for shared work; do not commit `terraform.tfstate`, `tfplan`, credentials or real `terraform.tfvars`.
+- If an older configuration is already applied, do not move resources to a new root without an explicit state migration and reviewed plan.
 
-Create VPC:
-- Name: `enterprise-vpc`
-- CIDR: `10.0.0.0/16`
-
-## 3. Public Subnet
-
-Create public subnet:
-- Name: `enterprise-public-subnet`
-- CIDR: `10.0.1.0/24`
-- AZ: `us-east-1a`
-- Auto-assign public IPv4: enabled
-
-## 4. Private Subnet
-
-Create private subnet:
-- Name: `enterprise-private-subnet`
-- CIDR: `10.0.2.0/24`
-- AZ: `us-east-1b`
-- Auto-assign public IPv4: disabled
-
-## 5. Internet Gateway
-
-Create and attach:
-- Name: `enterprise-igw`
-- Attached to: `enterprise-vpc`
-
-## 6. Route Table
-
-Create public route table:
-- Name: `enterprise-public-rt`
-- Route: `0.0.0.0/0` to Internet Gateway
-- Associated subnet: `enterprise-public-subnet`
-
-## 7. Security Group
-
-Create security group:
-- Name: `enterprise-web-sg`
-- VPC: `enterprise-vpc`
-
-Inbound:
-- HTTP 80 from anywhere
-- HTTPS 443 from anywhere
-- SSH 22 from My IP
-
-Outbound:
-- All traffic
-
-## 8. IAM Governance
-
-Create groups:
-- `enterprise-admins` with AdministratorAccess
-- `enterprise-engineers` with PowerUserAccess
-- `enterprise-auditors` with ReadOnlyAccess
-
-## 9. EC2 Deployment
-
-Launch instance:
-- Name: `enterprise-web-server`
-- AMI: Amazon Linux 2023
-- Type: t2.micro or t3.micro
-- Subnet: `enterprise-public-subnet`
-- Public IP: enabled
-- Security group: `enterprise-web-sg`
-- Key pair: `enterprise-keypair`
-
-## 10. SSH Connection
-
-From Mac Terminal:
+## Steps
 
 ```bash
-cd ~/Downloads
-chmod 400 enterprise-keypair.pem
-ssh -i enterprise-keypair.pem ec2-user@PUBLIC-IP
+cp terraform/terraform/terraform.tfvars.example terraform/terraform/terraform.tfvars
+# Replace notification_email, review aws_region and monthly_budget_usd.
+# enable_nat_gateway=false avoids a billed NAT gateway.
+python3 -m unittest discover -s tests -v
+make validate
+make bootstrap
+aws sts get-caller-identity
+make plan
 ```
 
-## 11. Apache Installation
-
-Inside EC2:
+Review all planned resources, charges, IAM/KMS permissions, and the change summary. **Only apply if the plan is expected and the account is isolated.**
 
 ```bash
-sudo dnf update -y
-sudo dnf install httpd -y
-sudo systemctl start httpd
-sudo systemctl enable httpd
-echo "<h1>Enterprise Landing Zone</h1><p>Cloud Platform Engineering Project</p>" | sudo tee /var/www/html/index.html
-curl localhost
+make deploy
+make test
 ```
 
-## 12. Website Validation
+After apply, independently verify CloudTrail delivery into S3, VPC Flow Logs, the SSM connection, encrypted SNS alarm delivery and confirmed email subscription. See [operations runbook](operations-runbook.md) and [validation matrix](VALIDATION_MATRIX.md). The script completing is **not** proof all AWS service integrations work.
 
-Open:
+## Cleanup
 
-```text
-http://PUBLIC-IP
-```
+`make destroy` is interactive and may stop because the audit bucket is deliberately protected by `force_destroy=false`. Make a retention-aware decision and perform explicit deletion only if authorized. Watch for residual buckets, log groups, KMS keys, public IPv4 or other resources, and review billing.
 
-Expected page:
-- Enterprise Landing Zone
-- Cloud Platform Engineering Project
+## Kubernetes
 
-## 13. CloudTrail
-
-Create trail:
-- Name: `enterprise-trail`
-- Multi-region: enabled
-- Management events: read/write
-- Data events: disabled
-- Insights: disabled
-- Storage: S3 bucket
-
-## 14. SNS
-
-Create topic:
-- Name: `enterprise-alerts`
-- Type: Standard
-
-Create subscription:
-- Protocol: Email
-- Endpoint: administrator email
-- Confirm subscription from email inbox
-
-## 15. CloudWatch Alarm
-
-Create alarm:
-- Metric: EC2 CPUUtilization
-- Statistic: Average
-- Period: 5 minutes
-- Threshold: greater than 70
-- Notification: SNS topic `enterprise-alerts`
-- Name: `enterprise-high-cpu-alarm`
-
-## 16. Architecture Diagram
-
-Create a diagram that includes:
-- Internet users
-- Internet Gateway
-- VPC
-- Public subnet
-- Private subnet
-- EC2 web server
-- Security group
-- Route table
-- IAM groups
-- CloudTrail
-- S3 log bucket
-- CloudWatch alarm
-- SNS topic
-- AWS Budget
+`kubernetes/` is an **independent workload sample**, not an EKS cluster. `cd kubernetes && ./scripts/validate.sh` verifies overlay rendering. Any actual `kubectl apply` requires a separately managed cluster and acceptance review.
