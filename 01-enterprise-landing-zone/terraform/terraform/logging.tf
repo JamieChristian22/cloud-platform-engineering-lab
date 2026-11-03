@@ -4,7 +4,7 @@ resource "random_id" "suffix" {
 
 resource "aws_s3_bucket" "audit" {
   bucket        = "${local.name_prefix}-audit-${data.aws_caller_identity.current.account_id}-${random_id.suffix.hex}"
-  force_destroy = true
+  force_destroy = false
 }
 
 resource "aws_s3_bucket_public_access_block" "audit" {
