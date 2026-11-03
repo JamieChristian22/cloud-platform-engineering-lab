@@ -12,21 +12,29 @@ spec:
     - Egress
   ingress:
     - from:
-        - namespaceSelector: {}
+        # In-namespace components can reach the service.
+        - podSelector: {}
+        # Adjust these labels if the ingress controller is installed elsewhere.
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
       ports:
         - protocol: TCP
           port: 8080
   egress:
+    # The demo NGINX page needs no general internet egress. Allow cluster DNS only.
     - to:
-        - namespaceSelector: {}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
       ports:
         - protocol: UDP
           port: 53
         - protocol: TCP
           port: 53
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-      ports:
-        - protocol: TCP
-          port: 443
