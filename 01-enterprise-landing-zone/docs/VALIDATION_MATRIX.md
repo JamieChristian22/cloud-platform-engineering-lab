@@ -11,7 +11,9 @@
 | Audit logging | Review `logging.tf` | CloudTrail status, delivery, KMS access and log retrieval |
 | Observability | Review `monitoring.tf` | Triggered alarm, confirmed SNS subscription and timestamp |
 | Web service | `make test` after apply | HTTP response, instance ID and timestamp |
-| Kubernetes manifests | `kubectl kustomize kubernetes/overlays/dev` and prod | Cluster-side server dry run, network policy and HPA behavior |
+| Kubernetes manifests | GitHub Actions: `kubectl kustomize` base/dev/prod | Cluster-side server dry run, policy enforcement, ingress and HPA behavior |
+| Deployment scripts | Offline mocked Python tests and ShellCheck | AWS plan/apply/change-management review |
+| Cost control | Static NAT opt-in and AWS Budget configuration | Budget confirmation, live billing and residual costs |
 | Cost | Budget definition and documented NAT gateway cost | Actual AWS Cost Explorer and budget subscription |
 
 ## Evidence recording template
@@ -22,7 +24,7 @@ Record UTC time, AWS region, sanitized account alias, git commit, Terraform vers
 
 ## Known lab tradeoffs
 
-- One NAT gateway is a cost-conscious single point of failure; use NAT per AZ or VPC endpoints for higher availability.
+- NAT gateway is off by default; enabling one creates a billed, single-AZ availability dependency. Use NAT per AZ or VPC endpoints for higher availability.
 - Public HTTP is a demo-only endpoint, not a production TLS service.
 - A 365-day log expiration is a lab policy, not a compliance retention determination.
 - SSM access requires an authorized operator and working agent/network path.
