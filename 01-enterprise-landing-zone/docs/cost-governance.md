@@ -1,42 +1,9 @@
-# Cost Governance
+# Cost governance (design, not a billing claim)
 
-## Budget Configuration
+The canonical Terraform configuration provisions a **monthly AWS Budget (default $25)** with forecasted alerts at 50%, 80% and 100%, sent to `notification_email`. A budget alerts but never blocks charges.
 
-Budget name:
+The most important lab control is `enable_nat_gateway = false` by default. Enabling the single NAT gateway adds hourly and traffic processing charges and introduces an availability dependency. Disabling it leaves private subnets without general internet egress.
 
-```text
-enterprise-budget
-```
+Other possible costs include public IPv4 address usage, EC2, gp3 EBS, KMS keys/API requests, CloudWatch Logs and metrics, S3 versioned logs and transitions, CloudTrail features, and data transfer. Check the live AWS pricing page for the selected region; do not assume an instance qualifies for free tier.
 
-Monthly budget amount:
-
-```text
-$5
-```
-
-Alert thresholds:
-- 50%
-- 80%
-- 100%
-
-Notification:
-- Email alert to administrator
-
-## Purpose
-
-The budget was configured to reduce the risk of unexpected AWS charges and demonstrate FinOps awareness.
-
-## Cost Controls Used
-
-- Free-tier eligible EC2 instance type
-- Small root EBS volume
-- No NAT Gateway
-- No load balancer
-- No paid data event logging
-- No CloudTrail Insights
-- Budget alerting enabled
-- EC2 stopped or terminated after evidence collection
-
-## FinOps Value
-
-This project shows that cloud engineers understand not only deployment, but also cost visibility and financial governance.
+After any hands-on deployment, perform a deliberate teardown review. The audit S3 bucket is not force-destroyed; versioned objects may remain and continue to cost money. Record the real budget, actual duration, observed charges and any cost exceptions only after consulting AWS Billing/Cost Explorer.
