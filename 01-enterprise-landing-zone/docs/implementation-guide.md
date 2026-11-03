@@ -27,6 +27,7 @@ Review all planned resources, charges, IAM/KMS permissions, and the change summa
 ```bash
 make deploy
 make test
+make verify # Requires live AWS CLI access; read-only acceptance checks
 ```
 
 After apply, independently verify CloudTrail delivery into S3, VPC Flow Logs, the SSM connection, encrypted SNS alarm delivery and confirmed email subscription. See [operations runbook](operations-runbook.md) and [validation matrix](VALIDATION_MATRIX.md). The script completing is **not** proof all AWS service integrations work.
