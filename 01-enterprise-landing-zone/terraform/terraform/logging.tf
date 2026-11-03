@@ -4,7 +4,7 @@ resource "random_id" "suffix" {
 
 resource "aws_s3_bucket" "audit" {
   bucket        = "${local.name_prefix}-audit-${data.aws_caller_identity.current.account_id}-${random_id.suffix.hex}"
-  force_destroy = true
+  force_destroy = false
 }
 
 resource "aws_s3_bucket_public_access_block" "audit" {
@@ -35,9 +35,18 @@ resource "aws_s3_bucket_lifecycle_configuration" "audit" {
   rule {
     id     = "archive-audit-logs"
     status = "Enabled"
-    transition { days = 30, storage_class = "STANDARD_IA" }
-    transition { days = 90, storage_class = "GLACIER" }
-    expiration { days = 365 }
+    filter {}
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+    transition {
+      days          = 90
+      storage_class = "GLACIER"
+    }
+    expiration {
+      days = 365
+    }
   }
 }
 
@@ -47,19 +56,28 @@ resource "aws_s3_bucket_policy" "audit" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid = "AWSCloudTrailAclCheck"
-        Effect = "Allow"
+        Sid       = "AWSCloudTrailAclCheck"
+        Effect    = "Allow"
         Principal = { Service = "cloudtrail.amazonaws.com" }
-        Action = "s3:GetBucketAcl"
-        Resource = aws_s3_bucket.audit.arn
+        Action    = "s3:GetBucketAcl"
+        Resource  = aws_s3_bucket.audit.arn
+        Condition = { StringEquals = { "aws:SourceArn" = "arn:aws:cloudtrail:${var.aws_region}:${data.aws_caller_identity.current.account_id}:trail/${local.name_prefix}-trail" } }
       },
       {
-        Sid = "AWSCloudTrailWrite"
-        Effect = "Allow"
+        Sid       = "AWSCloudTrailWrite"
+        Effect    = "Allow"
         Principal = { Service = "cloudtrail.amazonaws.com" }
-        Action = "s3:PutObject"
-        Resource = "${aws_s3_bucket.audit.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
-        Condition = { StringEquals = { "s3:x-amz-acl" = "bucket-owner-full-control" } }
+        Action    = "s3:PutObject"
+        Resource  = "${aws_s3_bucket.audit.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
+        Condition = { StringEquals = { "s3:x-amz-acl" = "bucket-owner-full-control", "aws:SourceArn" = "arn:aws:cloudtrail:${var.aws_region}:${data.aws_caller_identity.current.account_id}:trail/${local.name_prefix}-trail" } }
+      },
+      {
+        Sid       = "DenyNonTLSConnections"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource  = [aws_s3_bucket.audit.arn, "${aws_s3_bucket.audit.arn}/*"]
+        Condition = { Bool = { "aws:SecureTransport" = "false" } }
       }
     ]
   })
@@ -74,7 +92,7 @@ resource "aws_cloudwatch_log_group" "flow" {
 resource "aws_iam_role" "flow_logs" {
   name = "${local.name_prefix}-flow-logs-role"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [{ Effect = "Allow", Principal = { Service = "vpc-flow-logs.amazonaws.com" }, Action = "sts:AssumeRole" }]
   })
 }
@@ -85,9 +103,9 @@ resource "aws_iam_role_policy" "flow_logs" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
-      Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"]
-      Resource = "*"
+      Effect   = "Allow"
+      Action   = ["logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"]
+      Resource = aws_cloudwatch_log_group.flow.arn
     }]
   })
 }
@@ -97,6 +115,7 @@ resource "aws_flow_log" "vpc" {
   log_destination = aws_cloudwatch_log_group.flow.arn
   traffic_type    = "ALL"
   vpc_id          = aws_vpc.main.id
+  depends_on      = [aws_iam_role_policy.flow_logs]
 }
 
 resource "aws_cloudtrail" "main" {
@@ -106,5 +125,5 @@ resource "aws_cloudtrail" "main" {
   is_multi_region_trail         = true
   enable_log_file_validation    = true
   kms_key_id                    = aws_kms_key.logs.arn
-  depends_on                    = [aws_s3_bucket_policy.audit]
+  depends_on                    = [aws_s3_bucket_policy.audit, aws_s3_bucket_server_side_encryption_configuration.audit]
 }

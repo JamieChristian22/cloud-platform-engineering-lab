@@ -3,11 +3,6 @@ kind: Kustomization
 resources:
   - ../../base
 namePrefix: prod-
-patchesStrategicMerge:
-  - patch-replicas.yaml
-configMapGenerator:
-  - name: enterprise-web-config
-    behavior: merge
-    literals:
-      - ENVIRONMENT=prod
-      - LOG_LEVEL=info
+patches:
+  - path: patch-replicas.yaml
+  - path: patch-configmap.yaml

@@ -3,9 +3,8 @@ kind: Ingress
 metadata:
   name: enterprise-web-ingress
   namespace: enterprise-landing-zone
-  annotations:
-    kubernetes.io/ingress.class: nginx
 spec:
+  ingressClassName: nginx
   rules:
     - host: enterprise-landing-zone.local
       http:

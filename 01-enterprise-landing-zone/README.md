@@ -1,160 +1,57 @@
-# AWS Enterprise Landing Zone
+# AWS Landing Zone | Infrastructure as Code & Platform Validation
 
-## Project Overview
+**Status:** reviewed source-code lab and automated validation; **live AWS apply not yet independently verified**. This is a **single-account, enterprise-inspired AWS platform demo**, not an AWS Organizations multi-account landing zone or a production-certification claim.
 
-This project demonstrates a secure AWS Enterprise Landing Zone built for a cloud platform engineering portfolio. The environment includes networking, identity governance, compute, logging, monitoring, alerting, and cost governance.
+## Design overview
 
-The goal is to show how an organization can build a basic cloud foundation before deploying production workloads.
+The canonical Terraform root is **[`terraform/terraform/`](terraform/terraform/)**. There are no parallel Terraform configurations. The platform defines:
 
-## Business Problem
+| Layer | Implemented in code | Design boundary |
+|---|---|---|
+| Networking | VPC, two public and two private subnets across available AZs, internet gateway, route tables | NAT is **opt-in**; when disabled, private subnets have no default internet route |
+| Compute | Amazon Linux 2023 EC2 web demo with IMDSv2, SSM instance profile, encrypted gp3 root volume | Public IPv4 and plaintext HTTP are **lab-only** |
+| Security | No SSH inbound, KMS encryption policies, private audit bucket, HTTPS-only bucket access | Single account; no AWS Organizations/Control Tower, SCPs, WAF or TLS endpoint |
+| Audit | Multi-region CloudTrail, S3 encryption/versioning, VPC Flow Logs to encrypted CloudWatch Logs | KMS delivery and real log ingestion require account-level verification |
+| Operations | CloudWatch CPU alarm, customer-managed-key SNS alerts, cost budget notifications | Email subscriptions must be confirmed; alarms must be tested |
+| Kubernetes | Kustomize dev/prod overlays, workload hardening, HPA/PDB/NetworkPolicy | Kubernetes cluster and EKS **not** provisioned by Terraform |
 
-A growing organization needs a secure AWS foundation where teams can deploy cloud workloads while maintaining access control, audit visibility, operational monitoring, and cost protection.
+[Architecture decisions](architecture/architecture-decisions.md) · [Implementation guide](docs/implementation-guide.md) · [Security baseline](docs/security-baseline.md) · [Operations runbook](docs/operations-runbook.md) · [Validation/evidence matrix](docs/VALIDATION_MATRIX.md)
 
-Without a landing zone, the company risks:
-- Poor network segmentation
-- Uncontrolled user permissions
-- Lack of audit logs
-- Weak monitoring
-- Unexpected AWS charges
-- Inconsistent cloud operations
+## Offline checks (no AWS billing or credentials needed for tests)
 
-## Solution
+```bash
+python3 -m unittest discover -s tests -v
+make validate
+cd kubernetes && ./scripts/validate.sh
+```
 
-Designed and deployed an AWS landing zone using:
-- Amazon VPC
-- Public and private subnets
-- Internet Gateway
-- Route table
-- Security group
-- EC2 Linux web server
-- IAM governance groups
-- CloudTrail audit logging
-- S3 log storage
-- CloudWatch alarm
-- SNS email notification
-- AWS Budget cost alerting
+Python checks cover deployment-script safety and source invariants. Terraform validation needs Terraform >= 1.7 and network access to provider downloads. Optional TFLint, Checkov and ShellCheck are used when installed. The repository GitHub Actions workflow runs repository tests, shell syntax checks, Terraform format/init/validate, and Kubernetes rendering.
 
-## Architecture
+## Deploy in an isolated AWS sandbox (billable)
 
-The environment contains one VPC using the CIDR block `10.0.0.0/16`.
+```bash
+cp terraform/terraform/terraform.tfvars.example terraform/terraform/terraform.tfvars
+# Set a real notification_email and review budget, region and instance type.
+# NAT costs extra; enable_nat_gateway=false is the recommended lab default.
+make bootstrap
+make plan
+# Inspect terraform/terraform/tfplan before applying. Do not commit plan/state files.
+make deploy
+make test
+make verify # Requires a live, authorized AWS sandbox
+```
 
-Inside the VPC:
-- Public subnet: `10.0.1.0/24`
-- Private subnet: `10.0.2.0/24`
-- EC2 web server deployed in the public subnet
-- Security group controlling inbound and outbound traffic
-- Public route table with default route to the Internet Gateway
+**Do not** run this against an account with existing Terraform-managed infrastructure until you review the state addresses and migration implications. Use separate, securely locked/encrypted state for shared workflows. `make deploy` requires a saved plan and will not regenerate one implicitly. `make destroy` prompts, and the audit bucket intentionally blocks force deletion; review retained evidence and AWS billing after cleanup.
 
-Outside the workload layer:
-- IAM groups provide role-based access governance
-- CloudTrail captures management activity
-- CloudWatch monitors EC2 CPU utilization
-- SNS sends alert notifications
-- AWS Budgets tracks monthly cost usage
+## Evidence rules
 
-## AWS Services Used
+- [Live acceptance checklist](evidence/project-completion-checklist.md): incomplete until a deployment is actually performed.
+- [Recorded validation status](evidence/validation-results.md): distinguishes verified CI steps from pending AWS tests.
+- [Evidence collection guide](evidence/deployment-evidence.md): exact commands, dates and sanitized outputs, **not** unverified screenshots or invented results.
+- Legacy console/SSH guides in individual subject folders describe earlier manual work and **are not the authoritative Terraform deployment**.
 
-| Service | Purpose |
-|---|---|
-| Amazon VPC | Network foundation |
-| Subnets | Public/private segmentation |
-| Internet Gateway | Internet connectivity |
-| Route Tables | Traffic routing |
-| Security Groups | Instance-level firewall rules |
-| Amazon EC2 | Linux web workload |
-| IAM | Access governance |
-| CloudTrail | Audit logging |
-| Amazon S3 | CloudTrail log storage |
-| CloudWatch | Monitoring |
-| SNS | Alert notifications |
-| AWS Budgets | Cost governance |
+## Limitations and security
 
-## Implementation Summary
+The NAT gateway is disabled by default to limit charges. If enabled, it is **one** NAT gateway and therefore not highly available. The public demo serves HTTP, not HTTPS; this must not be treated as a production access pattern. The audit bucket has a 365-day current-object expiration policy and versioning; retention suitability, noncurrent-object costs, regulatory requirements and key policies need an account-specific review. State and plans can include secrets; store them outside the repository.
 
-1. Created AWS Budget for cost protection.
-2. Created enterprise VPC.
-3. Created public and private subnets.
-4. Attached Internet Gateway.
-5. Configured public route table.
-6. Created web security group.
-7. Created IAM governance groups.
-8. Launched EC2 web server.
-9. Connected using SSH key pair.
-10. Installed Apache.
-11. Verified website from public IP.
-12. Enabled CloudTrail.
-13. Created SNS topic and email subscription.
-14. Created CloudWatch CPU alarm.
-15. Created architecture diagram.
-16. Documented design, operations, security, and lessons learned.
-
-## Security Controls
-
-- SSH restricted to administrator IP
-- HTTP allowed for web testing
-- IAM groups separated by job function
-- CloudTrail enabled for audit visibility
-- Security group attached only to workload instance
-- Private subnet reserved for internal resources
-
-## Monitoring and Alerting
-
-CloudWatch monitors EC2 CPU utilization. If CPU utilization exceeds 70%, CloudWatch sends an alert to the SNS topic `enterprise-alerts`, which emails administrators.
-
-## Logging and Auditing
-
-CloudTrail is enabled as a multi-region trail and sends logs to an S3 bucket. This supports audit readiness and operational investigation.
-
-## Cost Governance
-
-AWS Budget `enterprise-budget` tracks estimated monthly charges with alert thresholds:
-- 50%
-- 80%
-- 100%
-
-## Evidence
-
-Screenshots should be stored in the `screenshots/` folder.
-
-Required screenshots:
-- Budget created
-- VPC created
-- Public subnet
-- Private subnet
-- Internet Gateway attached
-- Route table
-- Security group
-- IAM groups
-- EC2 running
-- SSH connected
-- Apache installed
-- Website working
-- CloudTrail enabled
-- SNS topic/subscription
-- CloudWatch alarm
-- Architecture diagram
-
-## Skills Demonstrated
-
-- AWS cloud networking
-- Platform engineering
-- IAM governance
-- Linux administration
-- Cloud monitoring
-- Cloud logging
-- Alerting
-- FinOps
-- Architecture documentation
-- Operational readiness
-
-## Cleanup
-
-After capturing screenshots:
-1. Stop or terminate EC2 instance.
-2. Keep documentation and screenshots.
-3. Keep budget alerts enabled.
-4. Review any active AWS resources to avoid charges.
-
-## Portfolio Rating
-
-This project is a 10/10 entry-level cloud platform engineering project because it demonstrates real hands-on deployment, governance, security, observability, and documentation.
+**No main-branch changes or AWS deployments occur automatically because this documentation or the CI workflow exists.**

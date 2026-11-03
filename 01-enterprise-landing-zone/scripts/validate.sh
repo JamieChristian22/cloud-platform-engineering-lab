@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-terraform -chdir="$ROOT/terraform" fmt -check -recursive
-terraform -chdir="$ROOT/terraform" init -backend=false
-terraform -chdir="$ROOT/terraform" validate
-if command -v tflint >/dev/null; then (cd "$ROOT/terraform" && tflint --init && tflint --recursive); fi
-if command -v checkov >/dev/null; then checkov -d "$ROOT/terraform" --config-file "$ROOT/terraform/.checkov.yaml"; fi
+TF="$ROOT/terraform/terraform"
+terraform -chdir="$TF" fmt -check -recursive
+terraform -chdir="$TF" init -backend=false -input=false
+terraform -chdir="$TF" validate -no-color
+if command -v tflint >/dev/null; then (cd "$TF" && tflint --init && tflint); fi
+if command -v checkov >/dev/null; then checkov -d "$TF"; fi
 if command -v shellcheck >/dev/null; then shellcheck "$ROOT"/scripts/*.sh; fi
-printf 'All validation checks passed.\n'
+printf 'Canonical Terraform validation completed.\n'

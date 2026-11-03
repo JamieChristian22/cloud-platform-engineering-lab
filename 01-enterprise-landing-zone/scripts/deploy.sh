@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ -f "$ROOT/terraform/tfplan" ]] || "$ROOT/scripts/plan.sh"
-terraform -chdir="$ROOT/terraform" apply -input=false -auto-approve tfplan
-terraform -chdir="$ROOT/terraform" output -json > "$ROOT/evidence/terraform-outputs.json"
-printf 'Deployment completed. Confirm the SNS subscription email before expecting alerts.\n'
+TF="$ROOT/terraform/terraform"
+[[ -f "$TF/tfplan" ]] || { echo "No reviewed plan found. Run make plan first." >&2; exit 1; }
+echo "Applying the existing reviewed plan. AWS charges may apply."
+terraform -chdir="$TF" apply -input=false tfplan
+echo "Apply returned successfully. Verify service health and alert subscriptions separately."

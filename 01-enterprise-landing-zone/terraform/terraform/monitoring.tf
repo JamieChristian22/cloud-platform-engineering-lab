@@ -1,6 +1,6 @@
 resource "aws_sns_topic" "alerts" {
   name              = "${local.name_prefix}-alerts"
-  kms_master_key_id = "alias/aws/sns"
+  kms_master_key_id = aws_kms_key.alerts.arn
 }
 
 resource "aws_sns_topic_subscription" "email" {
