@@ -1,0 +1,20 @@
+# Local AWS/Terraform state and generated files: NEVER commit.
+**/.terraform/
+**/.terraform.tfstate.lock.info
+**/*.tfstate
+**/*.tfstate.*
+**/terraform.tfvars
+**/terraform.tfvars.json
+**/*.auto.tfvars
+**/*.auto.tfvars.json
+**/tfplan
+**/*.tfplan
+**/crash.log
+**/crash.*.log
+
+# Generated evidence may contain account identifiers and sensitive plan output.
+evidence/terraform-plan.txt
+evidence/terraform-outputs.json
+evidence/*.tfplan
+
+# Keep .terraform.lock.hcl in version control once generated/reviewed.
