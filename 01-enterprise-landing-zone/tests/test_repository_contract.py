@@ -43,7 +43,7 @@ class LandingZoneContract(unittest.TestCase):
         network = (TF / "network.tf").read_text()
         self.assertIn('variable "enable_nat_gateway"', variables)
         self.assertIn("default     = false", variables)
-        self.assertIn("count = var.enable_nat_gateway ? 1 : 0", network)
+        self.assertIn("count=var.enable_nat_gateway?1:0", "".join(network.split()))
         self.assertIn('enable_nat_gateway = false', (TF / "terraform.tfvars.example").read_text())
 
     def test_audit_security_and_service_key_permissions(self):
