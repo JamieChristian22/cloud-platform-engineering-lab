@@ -38,6 +38,7 @@ make plan
 # Inspect terraform/terraform/tfplan before applying. Do not commit plan/state files.
 make deploy
 make test
+make verify # Requires a live, authorized AWS sandbox
 ```
 
 **Do not** run this against an account with existing Terraform-managed infrastructure until you review the state addresses and migration implications. Use separate, securely locked/encrypted state for shared workflows. `make deploy` requires a saved plan and will not regenerate one implicitly. `make destroy` prompts, and the audit bucket intentionally blocks force deletion; review retained evidence and AWS billing after cleanup.
