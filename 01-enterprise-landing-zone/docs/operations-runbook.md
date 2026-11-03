@@ -9,6 +9,8 @@ aws sts get-caller-identity
 terraform -chdir=terraform/terraform output
 ```
 
+Run `make verify` for automated read-only checks of EC2, SSM, CloudTrail, Flow Logs, S3, SNS and Budgets. This requires an actual deployed sandbox and AWS permissions, and does not replace live message/log delivery evidence.
+
 Confirm the account and region are expected. Save UTC timestamp, git SHA, Terraform version, exact command, exit code and sanitized evidence per [evidence guide](../evidence/deployment-evidence.md).
 
 ## EC2 health and web endpoint
