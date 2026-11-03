@@ -38,5 +38,42 @@ class LandingZoneContract(unittest.TestCase):
         self.assertNotIn("-auto-approve", deploy)
         self.assertIn("No reviewed plan found", deploy)
 
+    def test_nat_is_explicitly_opt_in(self):
+        variables = (TF / "variables.tf").read_text()
+        network = (TF / "network.tf").read_text()
+        self.assertRegex(variables, r'variable "enable_nat_gateway"[\\s\\S]*?default\\s*=\\s*false')
+        self.assertIn("count = var.enable_nat_gateway ? 1 : 0", network)
+        self.assertIn('enable_nat_gateway = false', (TF / "terraform.tfvars.example").read_text())
+
+    def test_audit_security_and_service_key_permissions(self):
+        security = (TF / "security.tf").read_text()
+        logging = (TF / "logging.tf").read_text()
+        monitoring = (TF / "monitoring.tf").read_text()
+        self.assertIn('resource "aws_kms_key" "logs"', security)
+        self.assertIn('resource "aws_kms_key" "alerts"', security)
+        self.assertIn('"cloudtrail.amazonaws.com"', security)
+        self.assertIn('logs.${var.aws_region}.amazonaws.com', security)
+        self.assertIn('"cloudwatch.amazonaws.com"', security)
+        self.assertIn('kms_master_key_id = aws_kms_key.alerts.arn', monitoring)
+        self.assertIn('DenyNonTLSConnections', logging)
+        self.assertIn('"aws:SecureTransport"', logging)
+        self.assertIn('"aws:SourceArn"', logging)
+        self.assertIn('block_public_policy     = true', logging)
+        self.assertIn('Resource = aws_cloudwatch_log_group.flow.arn', logging)
+        self.assertIn('filter {}', logging)
+
+    def test_no_legacy_ssh_or_public_access_backend(self):
+        security = (TF / "security.tf").read_text()
+        compute = (TF / "compute.tf").read_text()
+        self.assertNotIn('from_port   = 22', security)
+        self.assertNotIn('YOUR_IP_ADDRESS', security)
+        self.assertIn('http_tokens   = "required"', compute)
+        self.assertIn('AmazonSSMManagedInstanceCore', compute)
+
+    def test_evidence_is_explicitly_not_live_verified(self):
+        evidence = (ROOT / "evidence" / "project-completion-checklist.md").read_text()
+        self.assertIn('- [ ] Infrastructure apply', evidence)
+        self.assertIn('- [ ] CloudTrail', evidence)
+
 if __name__ == "__main__":
     unittest.main()
