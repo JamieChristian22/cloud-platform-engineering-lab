@@ -32,7 +32,11 @@ jobs:
       - name: Check shell script syntax
         run: |
           for f in 01-enterprise-landing-zone/scripts/*.sh; do bash -n "$f"; done
-      - uses: hashicorp/setup-terraform@v3
+      - name: Run ShellCheck
+        run: |
+          command -v shellcheck
+          shellcheck 01-enterprise-landing-zone/scripts/*.sh 01-enterprise-landing-zone/kubernetes/scripts/*.sh
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           terraform_version: '1.9.8'
           terraform_wrapper: false
@@ -46,3 +50,16 @@ jobs:
         run: |
           git diff -- 01-enterprise-landing-zone/terraform/terraform
           git diff --exit-code -- 01-enterprise-landing-zone/terraform/terraform
+
+  kubernetes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4
+        with:
+          version: 'v1.32.0'
+      - name: Render base, development and production overlays
+        run: bash 01-enterprise-landing-zone/kubernetes/scripts/validate.sh
