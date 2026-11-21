@@ -23,11 +23,12 @@ Public subnet means a subnet with a route to an internet gateway, **not** that i
 From this folder:
 ```sh
 terraform version
-terraform init -backend=false
+terraform init -backend=false -lockfile=readonly
 terraform fmt -check -recursive
 terraform validate
+terraform test -no-color
 ```
-`init -backend=false` installs the provider without configuring remote state. `validate` checks configuration structure, not actual AWS availability, security, or costs. Provider download requires internet connectivity; neither command creates AWS resources.
+`init -backend=false -lockfile=readonly` installs the provider pinned by `.terraform.lock.hcl` without configuring remote state or modifying the lock file. `validate` checks configuration structure; `terraform test` runs mocked, plan-only assertions from `tests/network.tftest.hcl` without AWS credentials. Provider download requires internet connectivity. These commands do not provision AWS resources.
 
 ## Optional cloud workflow (may incur AWS charges)
 Only with an approved AWS sandbox and explicit cost review:
@@ -39,6 +40,11 @@ terraform apply lab.tfplan
 terraform destroy
 ```
 Never commit plan files, state, credentials or secrets. AWS credentials should be supplied through approved short-lived authentication, not hardcoded into Terraform. **Do not run apply by default.** AWS networking resources can have costs depending on region, account, and future extensions; a budget alert does not cap spending.
+
+## Architecture and automated tests
+See [the architecture and design decision guide](architecture/README.md) for the network diagram, resource map, decisions, and limitations.
+
+`tests/network.tftest.hcl` uses a mocked AWS provider and plan-only runs to check subnet layout, zone distribution, IP assignment behavior, route-table associations, and configurable CIDRs. Test results in CI are static/model-based, **not live-cloud connectivity proof**. The checked-in `.terraform.lock.hcl` pins the provider version and release hashes for repeatable builds.
 
 ## Case studies
 1. **Private subnet egress failure:** an application cannot download packages from the internet. Explain that private route tables have no default route; choose an approved NAT or VPC endpoint design after cost review rather than opening everything.
