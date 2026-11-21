@@ -22,6 +22,14 @@ The root checks do **not** run `terraform plan` or `terraform apply`, do not con
 
 Terraform provider downloads contact the public provider registry and may vary until root-specific lock files are committed. Dependency lock files and more extensive security findings are future hardening work.
 
+## Advisory Terraform security scanning
+
+The separate `.github/workflows/legacy-terraform-security.yml` workflow scans each of the **same five roots** using Checkov 3.4.6. It copies only the selected root's immediate `*.tf` files to a disposable temporary directory before scanning. This is deliberate: scanning the basic landing zone recursively would accidentally include the different advanced landing-zone root.
+
+Each root has its own downloadable JSON artifact and a full findings summary in GitHub Actions. The scan **does not deploy AWS resources**, uses no AWS credentials, and fails if scanner output is incomplete or invalid. Existing policy findings are **advisory**, not fixed or silently ignored. CI passing means that a complete security scan ran, **not** that Checkov found zero problems.
+
+This audit is a first-pass code-security baseline. Its actual finding IDs, counts, and prioritization must be reviewed separately before treating older Terraform code as safe for live cloud use. Known areas of concern include public ingress, public IP auto assignment, NAT and EC2 costs, potential S3 audit-log deletion, and IAM policy breadth.
+
 ## Why each command matters
 
 - `terraform -chdir=PATH fmt -check -diff`: verify canonical formatting of the exact root and show diffs without editing committed files.
