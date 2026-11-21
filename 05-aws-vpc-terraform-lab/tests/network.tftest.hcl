@@ -44,6 +44,16 @@ run "two_az_network_layout" {
     condition     = length(aws_route_table_association.public) == 2 && length(aws_route_table_association.private) == 2
     error_message = "Each subnet must be associated with its intended route table."
   }
+
+  assert {
+    condition     = length(aws_route_table.public.route) == 1 && contains([for route in aws_route_table.public.route : route.cidr_block], "0.0.0.0/0")
+    error_message = "The public route table must contain its default internet route."
+  }
+
+  assert {
+    condition     = length(aws_route_table.private.route) == 0
+    error_message = "The private route table must not contain a default internet route."
+  }
 }
 
 run "custom_private_network_cidr" {
@@ -68,4 +78,14 @@ run "custom_private_network_cidr" {
     condition     = output.private_subnet_cidrs == ["10.42.11.0/24", "10.42.12.0/24"]
     error_message = "Custom CIDR must propagate to private subnets."
   }
+}
+
+run "reject_nonprivate_vpc_cidr" {
+  command = plan
+
+  variables {
+    vpc_cidr = "0.0.0.0/0"
+  }
+
+  expect_failures = [var.vpc_cidr]
 }
