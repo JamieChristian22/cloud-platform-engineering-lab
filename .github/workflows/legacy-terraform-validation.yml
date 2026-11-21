@@ -81,3 +81,6 @@ jobs:
         run: terraform -chdir="${{ matrix.path }}" init -backend=false -input=false -no-color
       - name: Validate source configuration without cloud credentials
         run: terraform -chdir="${{ matrix.path }}" validate -no-color
+      - name: Run mocked security behavior tests (03 and 04 only)
+        if: matrix.root_label == '03-shared-services' || matrix.root_label == '04-enterprise-observability'
+        run: terraform -chdir="${{ matrix.path }}" test -no-color

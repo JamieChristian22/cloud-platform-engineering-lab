@@ -10,6 +10,8 @@ on:
       - '.github/workflows/legacy-terraform-security.yml'
       - 'scripts/summarize_legacy_checkov.py'
       - 'scripts/test_summarize_legacy_checkov.py'
+      - 'scripts/check_legacy_targeted_controls.py'
+      - 'scripts/test_check_legacy_targeted_controls.py'
       - 'docs/legacy-terraform-root-validation.md'
   push:
     branches: [main]
@@ -21,6 +23,8 @@ on:
       - '.github/workflows/legacy-terraform-security.yml'
       - 'scripts/summarize_legacy_checkov.py'
       - 'scripts/test_summarize_legacy_checkov.py'
+      - 'scripts/check_legacy_targeted_controls.py'
+      - 'scripts/test_check_legacy_targeted_controls.py'
       - 'docs/legacy-terraform-root-validation.md'
   workflow_dispatch:
 
@@ -67,6 +71,8 @@ jobs:
 
       - name: Verify report parser with synthetic fixtures
         run: python3 -m unittest discover -s scripts -p 'test_summarize_legacy_checkov.py' -v
+      - name: Unit test protected Checkov controls
+        run: python3 -m unittest discover -s scripts -p 'test_check_legacy_targeted_controls.py' -v
 
       - name: Install pinned Checkov (no AWS credentials)
         run: |
@@ -86,6 +92,10 @@ jobs:
 
       - name: Report all findings, fail only on incomplete scanning
         run: python3 scripts/summarize_legacy_checkov.py "${RUNNER_TEMP}/scan-results/checkov.json" "${{ matrix.slug }}"
+
+      - name: Block regressions on remediated policies (03 and 04)
+        if: matrix.slug == '03-services' || matrix.slug == '04-observability'
+        run: python3 scripts/check_legacy_targeted_controls.py "${RUNNER_TEMP}/scan-results/checkov.json" "${{ matrix.slug }}"
 
       - name: Preserve audit JSON
         if: always()

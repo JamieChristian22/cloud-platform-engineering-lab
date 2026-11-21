@@ -3,7 +3,8 @@ provider "aws" {
 }
 
 resource "aws_sns_topic" "ops_alerts" {
-  name = var.sns_topic_name
+  name              = var.sns_topic_name
+  kms_master_key_id = "alias/aws/sns"
 }
 
 resource "aws_cloudwatch_dashboard" "platform_operations" {
