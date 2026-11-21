@@ -31,6 +31,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Use supported Python for Checkov
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: '3.12'
+
       - name: Run hard-gated policy guardrail tests
         run: python3 -m unittest discover -s 05-aws-vpc-terraform-lab/security -p 'test_*.py' -v
 
