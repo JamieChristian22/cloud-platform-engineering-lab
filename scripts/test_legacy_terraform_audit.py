@@ -29,6 +29,35 @@ class LegacyTerraformAuditTests(unittest.TestCase):
             (Path(d) / "main.tf").write_text('cidr_blocks = ["YOUR_IP_ADDRESS/32"]')
             self.assertTrue(any("Invalid SSH CIDR placeholder" in x for x in inspect(Path(d))["issues"]))
 
+    def test_public_http_with_separately_restricted_ssh_is_not_a_violation(self):
+        with tempfile.TemporaryDirectory() as d:
+            source = """resource "aws_security_group" "web" {
+              ingress {
+                from_port = 80
+                to_port = 80
+                cidr_blocks = ["0.0.0.0/0"]
+              }
+              ingress {
+                from_port = 22
+                to_port = 22
+                cidr_blocks = [var.allowed_ssh_cidr]
+              }
+            }"""
+            (Path(d) / "security.tf").write_text(source)
+            self.assertEqual(inspect(Path(d))["issues"], [])
+
+    def test_public_ssh_in_single_ingress_block_is_denied(self):
+        with tempfile.TemporaryDirectory() as d:
+            source = """resource "aws_security_group" "web" {
+              ingress {
+                from_port = 22
+                to_port = 22
+                cidr_blocks = ["0.0.0.0/0"]
+              }
+            }"""
+            (Path(d) / "security.tf").write_text(source)
+            self.assertTrue(any("Internet-wide SSH" in issue for issue in inspect(Path(d))["issues"]))
+
     def test_cost_signals_are_reported_not_deleted(self):
         with tempfile.TemporaryDirectory() as d:
             (Path(d) / "main.tf").write_text('resource "aws_nat_gateway" "main" {}')

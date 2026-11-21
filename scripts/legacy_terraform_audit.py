@@ -46,9 +46,13 @@ def inspect(root: Path) -> dict:
             resources[item] = resources.get(item, 0) + 1
         if "YOUR_IP_ADDRESS/32" in text:
             issues.append(f"Invalid SSH CIDR placeholder: {path.name}")
-        if re.search(r'\bcidr_blocks\s*=\s*\["0\.0\.0\.0/0"\]', text) and re.search(r'\bfrom_port\s*=\s*22\b', text):
-            # Conservative hint, not a complete HCL-aware ingress policy check.
-            issues.append(f"Manually review potential internet-wide SSH ingress: {path.name}")
+        # Inspect each simple legacy ingress block independently. A public HTTP
+        # rule and a separately restricted SSH rule are not public SSH.
+        for ingress in re.findall(r'(?ms)^\s*ingress\s*\{([^{}]*)\}', text):
+            public = re.search(r'\bcidr_blocks\s*=\s*\["0\.0\.0\.0/0"\]', ingress)
+            ssh = re.search(r'\b(?:from_port|to_port)\s*=\s*22\b', ingress)
+            if public and ssh:
+                issues.append(f"Internet-wide SSH ingress in {path.name}")
     return {
         "terraform_files": len(sources),
         "resources": resources,
