@@ -8,6 +8,7 @@ A cost-conscious, production-inspired networking case study for associate cloud/
 - Two private subnets (`10.20.11.0/24`, `10.20.12.0/24`)
 - Internet gateway and a public default route
 - Explicit private route table **without** a default internet route
+- Two workload security groups with HTTPS restricted to the VPC, and SG-to-SG app traffic on TCP 8080
 - No EC2, NAT gateway, Elastic IP, or public IP auto-assignment
 
 Public subnet means a subnet with a route to an internet gateway, **not** that its resources automatically have public IPs. This is a networking foundation, not a complete production landing zone.
@@ -28,7 +29,7 @@ terraform fmt -check -recursive
 terraform validate
 terraform test -no-color
 ```
-`init -backend=false -lockfile=readonly` installs the provider pinned by `.terraform.lock.hcl` without configuring remote state or modifying the lock file. `validate` checks configuration structure; `terraform test` runs mocked, plan-only assertions from `tests/network.tftest.hcl` without AWS credentials. Provider download requires internet connectivity. These commands do not provision AWS resources.
+`init -backend=false -lockfile=readonly` installs the provider pinned by `.terraform.lock.hcl` without configuring remote state or modifying the lock file. `validate` checks configuration structure; `terraform test` runs mocked plan/simulated-apply assertions from `tests/network.tftest.hcl` and `tests/security.tftest.hcl` without AWS credentials. Provider download requires internet connectivity. These commands do not provision AWS resources.
 
 ## Optional cloud workflow (may incur AWS charges)
 Only with an approved AWS sandbox and explicit cost review:
@@ -44,7 +45,11 @@ Never commit plan files, state, credentials or secrets. AWS credentials should b
 ## Architecture and automated tests
 See [the architecture and design decision guide](architecture/README.md) for the network diagram, resource map, decisions, and limitations.
 
-`tests/network.tftest.hcl` uses a mocked AWS provider, with one simulated in-memory apply and plan-only runs to check subnet layout, zone distribution, IP assignment behavior, route-table associations, and configurable CIDRs. Test results in CI are static/model-based, **not live-cloud connectivity proof**. The checked-in `.terraform.lock.hcl` pins the provider version and release hashes for repeatable builds.
+`tests/network.tftest.hcl` uses a mocked AWS provider, with one simulated in-memory apply and plan-only runs to check subnet layout, zone distribution, IP assignment behavior, route-table associations, and configurable CIDRs. `tests/security.tftest.hcl` checks internal HTTPS ingress and SG-to-SG app access without real AWS connections. Test results in CI are static/model-based, **not live-cloud connectivity proof**. The checked-in `.terraform.lock.hcl` pins the provider version and release hashes for repeatable builds.
+
+## Security groups and incident response
+
+The lab also defines web/app workload security groups in `security.tf`. A web-tier policy allows HTTPS only from inside the VPC (TCP 443), the app-tier policy accepts TCP 8080 only from a workload carrying the web SG, and the web tier has an explicit TCP 8080 egress rule to the app SG. **Neither SG is attached to a workload**, and no publicly accessible service is created. See [security and routing incident exercises](docs/security-incident-runbook.md). The SG rules model intended policy; real AWS enforcement and removal of any implicit default egress must be verified before any future authorized live deployment.
 
 ## Case studies
 1. **Private subnet egress failure:** an application cannot download packages from the internet. Explain that private route tables have no default route; choose an approved NAT or VPC endpoint design after cost review rather than opening everything.
@@ -56,6 +61,8 @@ See [the architecture and design decision guide](architecture/README.md) for the
 - CI reports formatting and validation results.
 - Reviewers can trace VPC/subnet/route table relationships.
 - No default SSH ingress, NAT gateway or EC2 instance.
+- Web HTTPS ingress is VPC-only and internal app traffic uses SG-to-SG rules.
+- Mocked infrastructure security assertions pass in CI.
 - No secrets or state files committed.
 - Document any real deployment separately with redacted evidence and a cleanup checklist.
 

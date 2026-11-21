@@ -16,3 +16,13 @@ output "public_subnet_cidrs" {
 output "private_subnet_cidrs" {
   value = local.private_cidrs
 }
+
+output "web_security_group_id" {
+  description = "Security group ID for future internal web-tier workloads."
+  value       = aws_security_group.web.id
+}
+
+output "app_security_group_id" {
+  description = "Security group ID for future private app-tier workloads."
+  value       = aws_security_group.app.id
+}
