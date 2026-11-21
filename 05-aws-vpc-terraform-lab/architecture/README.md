@@ -36,6 +36,21 @@ flowchart TB
 | No automatically assigned public IPs | Reduces accidental public exposure | Public resources would need separate, explicit IP assignments |
 | Explicit route-table associations | Avoids reliance on whichever route table is the VPC main route table | Requires disciplined updates when adding subnets |
 
+## Workload security policy (future use)
+
+```mermaid
+flowchart LR
+    Internal["VPC clients"] -->|"TCP 443"| WebSG["Web security group"]
+    WebSG -->|"TCP 8080 only"| AppSG["App security group"]
+    Internet["Public internet"] -. "No ingress rule" .-> WebSG
+```
+
+- `aws_security_group.web` and `aws_security_group.app` define network-interface policies for workloads that might be added later. They are **not attached to subnets** and do not deploy workloads.
+- `aws_vpc_security_group_ingress_rule.web_https_from_vpc` allows HTTPS **from the VPC CIDR only**, never the whole internet.
+- `aws_vpc_security_group_ingress_rule.app_from_web` allows inbound TCP 8080 from network interfaces with the web security group.
+- `aws_vpc_security_group_egress_rule.web_to_app` permits web-tier outbound TCP 8080 toward the app tier.
+- No SSH rule or internet-wide egress rule is intentionally declared. AWS-generated default egress and out-of-band modifications require verification after a separately authorized live deployment.
+
 **Production caveat:** An internet gateway alone does not expose a host; IP addresses, security groups, network ACLs, OS firewalls, and service listeners must all be configured appropriately. This is a training foundation rather than a complete production landing zone.
 
 ## Infrastructure-to-code map
@@ -50,10 +65,10 @@ flowchart TB
 
 ## Tests
 
-The `tests/network.tftest.hcl` suite replaces the AWS provider with a **mock provider** and tests Terraform plans only; it does **not** create AWS infrastructure. The suite verifies subnet counts, CIDRs, distinct AZ placements, public IP assignment policy, and route table association counts. The tests do not validate network reachability or real AWS account policy.
+The `tests/network.tftest.hcl` and `tests/security.tftest.hcl` suites replace the AWS provider with a **mock provider** and use plans and simulated applies; they do **not** create AWS infrastructure. The suite verifies subnet counts, CIDRs, distinct AZ placements, public IP assignment policy, and route table association counts. The tests do not validate network reachability or real AWS account policy.
 
 ```sh
-terraform init -backend=false
+terraform init -backend=false -lockfile=readonly
 terraform fmt -check -recursive
 terraform validate
 terraform test -no-color
