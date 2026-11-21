@@ -12,7 +12,7 @@ resource "aws_cloudwatch_log_group" "vpc" {
 }
 
 resource "aws_iam_role" "vpc_flow_logs" {
-  count = var.enable_flow_logs ? 1 : 0
+  count       = var.enable_flow_logs ? 1 : 0
   name_prefix = "${var.project_name}-flow-logs-"
 
   assume_role_policy = jsonencode({
