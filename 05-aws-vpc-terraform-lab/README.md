@@ -44,7 +44,7 @@ Never commit plan files, state, credentials or secrets. AWS credentials should b
 ## Architecture and automated tests
 See [the architecture and design decision guide](architecture/README.md) for the network diagram, resource map, decisions, and limitations.
 
-`tests/network.tftest.hcl` uses a mocked AWS provider and plan-only runs to check subnet layout, zone distribution, IP assignment behavior, route-table associations, and configurable CIDRs. Test results in CI are static/model-based, **not live-cloud connectivity proof**. The checked-in `.terraform.lock.hcl` pins the provider version and release hashes for repeatable builds.
+`tests/network.tftest.hcl` uses a mocked AWS provider, with one simulated in-memory apply and plan-only runs to check subnet layout, zone distribution, IP assignment behavior, route-table associations, and configurable CIDRs. Test results in CI are static/model-based, **not live-cloud connectivity proof**. The checked-in `.terraform.lock.hcl` pins the provider version and release hashes for repeatable builds.
 
 ## Case studies
 1. **Private subnet egress failure:** an application cannot download packages from the internet. Explain that private route tables have no default route; choose an approved NAT or VPC endpoint design after cost review rather than opening everything.

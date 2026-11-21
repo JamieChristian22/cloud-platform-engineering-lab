@@ -8,7 +8,8 @@ mock_provider "aws" {
 }
 
 run "two_az_network_layout" {
-  command = plan
+  # Mock provider: apply is simulated in memory, not sent to AWS.
+  command = apply
 
   assert {
     condition     = length(aws_subnet.public) == 2 && length(aws_subnet.private) == 2
