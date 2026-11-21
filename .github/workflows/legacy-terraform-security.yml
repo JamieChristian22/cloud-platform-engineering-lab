@@ -1,0 +1,97 @@
+name: Legacy Terraform security scan (advisory)
+
+on:
+  pull_request:
+    paths:
+      - '01-enterprise-landing-zone/terraform/**'
+      - '02-multi-account-governance-platform/terraform/**'
+      - '03-shared-services-platform/terraform/**'
+      - '04-enterprise-observability-platform/terraform/**'
+      - '.github/workflows/legacy-terraform-security.yml'
+      - 'scripts/summarize_legacy_checkov.py'
+      - 'scripts/test_summarize_legacy_checkov.py'
+      - 'docs/legacy-terraform-root-validation.md'
+  push:
+    branches: [main]
+    paths:
+      - '01-enterprise-landing-zone/terraform/**'
+      - '02-multi-account-governance-platform/terraform/**'
+      - '03-shared-services-platform/terraform/**'
+      - '04-enterprise-observability-platform/terraform/**'
+      - '.github/workflows/legacy-terraform-security.yml'
+      - 'scripts/summarize_legacy_checkov.py'
+      - 'scripts/test_summarize_legacy_checkov.py'
+      - 'docs/legacy-terraform-root-validation.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checkov-advisory:
+    name: Scan ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 01 basic landing zone
+            slug: 01-basic
+            path: 01-enterprise-landing-zone/terraform
+          - name: 01 advanced landing zone
+            slug: 01-advanced
+            path: 01-enterprise-landing-zone/terraform/terraform
+          - name: 02 governance
+            slug: 02-governance
+            path: 02-multi-account-governance-platform/terraform
+          - name: 03 shared services
+            slug: 03-services
+            path: 03-shared-services-platform/terraform
+          - name: 04 observability
+            slug: 04-observability
+            path: 04-enterprise-observability-platform/terraform
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Verify report parser with synthetic fixtures
+        run: python3 -m unittest discover -s scripts -p 'test_summarize_legacy_checkov.py' -v
+
+      - name: Install pinned Checkov (no AWS credentials)
+        run: |
+          python3 -m venv "${RUNNER_TEMP}/checkov"
+          "${RUNNER_TEMP}/checkov/bin/python" -m pip install --disable-pip-version-check --no-input 'checkov==3.4.6'
+
+      - name: Isolate Terraform root and scan source
+        run: |
+          mkdir -p "${RUNNER_TEMP}/isolated-root" "${RUNNER_TEMP}/scan-results"
+          cp "${{ matrix.path }}"/*.tf "${RUNNER_TEMP}/isolated-root/"
+          "${RUNNER_TEMP}/checkov/bin/checkov" \
+            --directory "${RUNNER_TEMP}/isolated-root" \
+            --framework terraform \
+            --skip-download \
+            --output json \
+            --soft-fail > "${RUNNER_TEMP}/scan-results/checkov.json"
+
+      - name: Report all findings, fail only on incomplete scanning
+        run: python3 scripts/summarize_legacy_checkov.py "${RUNNER_TEMP}/scan-results/checkov.json" "${{ matrix.slug }}"
+
+      - name: Preserve audit JSON
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: legacy-terraform-checkov-${{ matrix.slug }}
+          path: ${{ runner.temp }}/scan-results/checkov.json
+          if-no-files-found: warn
+          retention-days: 14

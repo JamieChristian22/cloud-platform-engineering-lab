@@ -76,14 +76,8 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Replace this with your administrator IP in real usage.
-  ingress {
-    description = "SSH access from administrator IP"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["YOUR_IP_ADDRESS/32"]
-  }
+  # SSH intentionally disabled; use an approved, scoped access method
+  # in a future reviewed workload module rather than a placeholder CIDR.
 
   egress {
     description = "Allow all outbound traffic"

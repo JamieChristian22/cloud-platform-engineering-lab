@@ -1,0 +1,83 @@
+name: Legacy Terraform roots validation
+
+on:
+  pull_request:
+    paths:
+      - '01-enterprise-landing-zone/terraform/**'
+      - '02-multi-account-governance-platform/terraform/**'
+      - '03-shared-services-platform/terraform/**'
+      - '04-enterprise-observability-platform/terraform/**'
+      - '.github/workflows/legacy-terraform-validation.yml'
+      - 'scripts/legacy_terraform_audit.py'
+      - 'scripts/test_legacy_terraform_audit.py'
+      - 'docs/legacy-terraform-root-validation.md'
+  push:
+    branches: [main]
+    paths:
+      - '01-enterprise-landing-zone/terraform/**'
+      - '02-multi-account-governance-platform/terraform/**'
+      - '03-shared-services-platform/terraform/**'
+      - '04-enterprise-observability-platform/terraform/**'
+      - '.github/workflows/legacy-terraform-validation.yml'
+      - 'scripts/legacy_terraform_audit.py'
+      - 'scripts/test_legacy_terraform_audit.py'
+      - 'docs/legacy-terraform-root-validation.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-terraform-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  root-inventory:
+    name: Audit legacy Terraform root inventory (no AWS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Unit test root discovery and SSH guardrails
+        run: python3 -m unittest discover -s scripts -p 'test_legacy_terraform_audit.py' -v
+      - name: Report roots and sensitive-cost resource patterns
+        run: python3 scripts/legacy_terraform_audit.py
+
+  terraform-roots:
+    name: Validate ${{ matrix.root_label }}
+    needs: root-inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - root_label: 01-basic-landing-zone
+            path: 01-enterprise-landing-zone/terraform
+          - root_label: 01-advanced-landing-zone
+            path: 01-enterprise-landing-zone/terraform/terraform
+          - root_label: 02-multi-account-governance
+            path: 02-multi-account-governance-platform/terraform
+          - root_label: 03-shared-services
+            path: 03-shared-services-platform/terraform
+          - root_label: 04-enterprise-observability
+            path: 04-enterprise-observability-platform/terraform
+
+    env:
+      TF_IN_AUTOMATION: 'true'
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: '1.9.8'
+      - name: Check this Terraform root formatting (do not recurse into nested roots)
+        run: terraform -chdir="${{ matrix.path }}" fmt -check -diff
+      - name: Install providers without configuring a remote backend
+        run: terraform -chdir="${{ matrix.path }}" init -backend=false -input=false -no-color
+      - name: Validate source configuration without cloud credentials
+        run: terraform -chdir="${{ matrix.path }}" validate -no-color

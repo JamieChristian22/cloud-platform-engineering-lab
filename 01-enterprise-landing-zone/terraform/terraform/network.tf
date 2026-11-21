@@ -25,7 +25,7 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + 11)
   availability_zone = data.aws_availability_zones.available.names[count.index]
-  tags               = { Name = "${local.name_prefix}-private-${count.index + 1}", Tier = "private" }
+  tags              = { Name = "${local.name_prefix}-private-${count.index + 1}", Tier = "private" }
 }
 
 resource "aws_eip" "nat" {
