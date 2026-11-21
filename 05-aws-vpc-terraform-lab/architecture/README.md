@@ -61,7 +61,8 @@ flowchart LR
 - `aws_route_table.public`: default IPv4 route via the internet gateway.
 - `aws_route_table.private`: no configured default internet route, only AWS-managed local VPC routing.
 - `aws_route_table_association.*`: binds each subnet to the correct route table.
-- `data.aws_availability_zones.available`: dynamically selects two available zones rather than hard-coding `us-east-1a` and `us-east-1b`.
+- `data.aws_availability_zones.available`: pins the two explicitly allowlisted zone IDs from `var.availability_zone_ids`, avoiding newly added Availability Zones changing the selection unexpectedly. Defaults are specific to `us-east-1`; override these IDs when changing regions.
+- `aws_default_security_group.locked_down`: adopts and removes default inbound and outbound permissions from the VPC's automatically created default security group; only appropriate for a new or carefully reviewed VPC.
 
 ## Tests
 

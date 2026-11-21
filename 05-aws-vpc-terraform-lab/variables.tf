@@ -46,3 +46,14 @@ variable "flow_log_retention_days" {
     error_message = "Choose one of the supported lab retention periods: 1, 3, 5, 7, 14, 30, 60, or 90 days."
   }
 }
+
+variable "availability_zone_ids" {
+  description = "Exactly two region-specific Availability Zone IDs; defaults apply to us-east-1."
+  type        = list(string)
+  default     = ["use1-az1", "use1-az2"]
+
+  validation {
+    condition     = length(var.availability_zone_ids) == 2 && length(distinct(var.availability_zone_ids)) == 2
+    error_message = "Provide exactly two distinct Availability Zone IDs valid in the chosen AWS region."
+  }
+}

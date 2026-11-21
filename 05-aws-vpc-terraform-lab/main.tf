@@ -16,6 +16,13 @@ locals {
 
 data "aws_availability_zones" "available" {
   state = "available"
+
+  # Pin specific region-level zone IDs so a newly added AZ cannot silently
+  # change the selected set. Default IDs are for us-east-1 only.
+  filter {
+    name   = "zone-id"
+    values = var.availability_zone_ids
+  }
 }
 
 resource "aws_vpc" "lab" {

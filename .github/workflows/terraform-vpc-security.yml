@@ -1,0 +1,81 @@
+name: AWS VPC Terraform security audit
+
+on:
+  pull_request:
+    paths:
+      - '05-aws-vpc-terraform-lab/**'
+      - '.github/workflows/terraform-vpc-security.yml'
+      - '.github/workflows/terraform-vpc-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - '05-aws-vpc-terraform-lab/**'
+      - '.github/workflows/terraform-vpc-security.yml'
+      - '.github/workflows/terraform-vpc-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iac-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout with credentials disabled
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Use supported Python for Checkov
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Run hard-gated policy guardrail tests
+        run: python3 -m unittest discover -s 05-aws-vpc-terraform-lab/security -p 'test_*.py' -v
+
+      - name: Enforce lab security guardrails
+        run: python3 05-aws-vpc-terraform-lab/security/policy_gate.py
+
+      - name: Install pinned Checkov in an isolated virtual environment
+        run: |
+          python3 -m venv "${RUNNER_TEMP}/checkov-venv"
+          "${RUNNER_TEMP}/checkov-venv/bin/python" -m pip install --disable-pip-version-check --no-input 'checkov==3.4.6'
+          "${RUNNER_TEMP}/checkov-venv/bin/checkov" --version
+
+      - name: Scan Terraform with Checkov (retain full JSON report)
+        run: |
+          mkdir -p "${RUNNER_TEMP}/checkov-results"
+          "${RUNNER_TEMP}/checkov-venv/bin/checkov" \
+            --directory 05-aws-vpc-terraform-lab \
+            --framework terraform \
+            --skip-download \
+            --output json \
+            --soft-fail > "${RUNNER_TEMP}/checkov-results/checkov.json"
+
+      - name: Gate any new Checkov misconfigurations and summarize findings
+        run: python3 05-aws-vpc-terraform-lab/security/summarize_checkov.py "${RUNNER_TEMP}/checkov-results/checkov.json"
+
+      - name: Gate remediated Checkov controls
+        run: |
+          "${RUNNER_TEMP}/checkov-venv/bin/checkov" \
+            --directory 05-aws-vpc-terraform-lab \
+            --framework terraform \
+            --skip-download \
+            --check CKV_AWS_394,CKV2_AWS_12 \
+            --compact \
+            --quiet
+
+      - name: Upload inspectable Checkov JSON results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: aws-vpc-terraform-checkov-report
+          path: ${{ runner.temp }}/checkov-results/checkov.json
+          if-no-files-found: warn
+          retention-days: 14
