@@ -9,8 +9,8 @@ Scope: the older Terraform modules under projects 01–04. The newer `05-aws-vpc
 | 01 basic landing zone | `01-enterprise-landing-zone/terraform` | VPC, public/private subnet, IGW, web SG | Previously invalid SSH CIDR placeholder removed; HTTP/HTTPS remain public and egress is broad |
 | 01 advanced landing zone | `01-enterprise-landing-zone/terraform/terraform` | Multi-AZ VPC, NAT, EC2, S3, CloudTrail, CloudWatch, IAM, KMS, budget, SNS | **Cost-intensive**: NAT hourly/data, EC2, logging, KMS. S3 audit bucket has `force_destroy=true` and a single NAT AZ; review data retention and DR |
 | 02 multi-account governance | `02-multi-account-governance-platform/terraform` | AWS Organizations organizational units | Requires Organizations root ID and privileged administrator access. An accidental apply changes organization structure |
-| 03 shared services | `03-shared-services-platform/terraform` | Shared VPC, subnets, IGW, CloudWatch logs | Public IP auto assignment and three CloudWatch groups; evaluate isolation, retention and cost |
-| 04 observability | `04-enterprise-observability-platform/terraform` | SNS topic and CloudWatch dashboard | Potential charges and missing real alert subscriptions/metrics |
+| 03 shared services | `03-shared-services-platform/terraform` | Shared VPC, subnets, IGW, CloudWatch logs | Auto public IP disabled, default SG locked down, private routing explicit; CloudWatch log retention and encryption still require policy review |
+| 04 observability | `04-enterprise-observability-platform/terraform` | SNS topic and CloudWatch dashboard | SNS uses AWS-managed encryption; real alert subscriptions, publisher key permissions and metrics remain unverified |
 
 **Important:** Project 01 contains two Terraform roots, one **nested inside** the other. Terraform reads only `*.tf` files directly in the directory selected by `-chdir`; the CI job never runs recursive formatting that might mix these separate roots.
 
@@ -28,7 +28,7 @@ The separate `.github/workflows/legacy-terraform-security.yml` workflow scans ea
 
 Each root has its own downloadable JSON artifact and a full findings summary in GitHub Actions. The scan **does not deploy AWS resources**, uses no AWS credentials, and fails if scanner output is incomplete or invalid. Existing policy findings are **advisory**, not fixed or silently ignored. CI passing means that a complete security scan ran, **not** that Checkov found zero problems.
 
-### Actual security scan results
+### Original security scan baseline (PR #8)
 
 [GitHub Actions run 44862770622](https://github.com/JamieChristian22/cloud-platform-engineering-lab/actions/runs/44862770622) scanned the five Terraform roots **independently** with Checkov 3.4.6. All five scanning jobs ran successfully, with no Checkov parsing errors. These are actual source findings, not deployed AWS resource observations.
 
@@ -41,13 +41,30 @@ Each root has its own downloadable JSON artifact and a full findings summary in 
 | 04 observability | 1 | **1** | SNS topic encryption policy |
 | **Total** | **80** | **34** | Findings are still open; no deployment has occurred |
 
-All 34 findings remain **visible and unwaived** in the individual JSON artifacts from the GitHub Actions run. A successful *advisory* job means that Checkov ran and produced a parseable report; it **does not** mean that any failing security control passed.
+All **34 original findings** are preserved in the individual JSON artifacts from that baseline run. After subsequent targeted remediation in PR #9, 31 findings remain. A successful *advisory* job means Checkov ran and produced a parseable report; it **does not** mean that any failing security control passed.
 
 ### Next remediation phase — Projects 03 and 04
 
 This phase updates shared-services Terraform to disable automatic public IPs, explicitly isolate its private subnet, and manage the default VPC security group with no rules. The enterprise observability Terraform SNS topic now specifies AWS-managed KMS encryption (`alias/aws/sns`). The new mocked tests and Checkov control gates cover these changes, while **remaining logging retention, KMS, and VPC Flow Logs findings stay visible**.
 
 The open landing-zone PR #3 already proposes overlapping changes to project 01, so this phase intentionally does not edit either project-01 Terraform root. Its high-priority public exposure, broad IAM and audit S3 deletion risks remain in that separate review queue.
+
+### Verified post-remediation results (PR #9)
+
+[GitHub Actions security run 44865715245](https://github.com/JamieChristian22/cloud-platform-engineering-lab/actions/runs/44865715245) rescanned all five isolated roots. The [five-root validation matrix](https://github.com/JamieChristian22/cloud-platform-engineering-lab/actions/runs/44865715202) passed, including mocked Terraform tests for projects 03 and 04.
+
+| Root | Checkov controls passed | Remaining findings | Change since original baseline |
+| --- | ---: | ---: | --- |
+| 01 basic landing zone | 8 | **6** | No changes in this PR; existing PR #3 overlaps project 01 |
+| 01 advanced landing zone | 63 | **18** | No changes in this PR; existing PR #3 overlaps project 01 |
+| 02 governance | 1 | **0** | Unchanged |
+| 03 shared services | 11 | **7** | **2 findings remediated**: `CKV_AWS_130` and `CKV2_AWS_12` |
+| 04 observability | 2 | **0** | **1 finding remediated**: `CKV_AWS_26` |
+| **Total** | **85** | **31** | **3 fewer findings**, without suppressing remaining reports |
+
+This source-only improvement is supported by exact Checkov policy/resource verification: `scripts/check_legacy_targeted_controls.py` makes CI **fail** if the three targeted checks ever regress or disappear from `passed_checks`. Other legacy findings remain visible and advisory, not accepted for production.
+
+The seven remaining project-03 findings cover absent VPC Flow Logs (`CKV2_AWS_11`), customer-managed encryption (`CKV_AWS_158` ×3), and log retention (`CKV_AWS_338` ×3). Avoid adding paid logging or KMS resources and modifying retention without an explicit data-classification, cost, permissions, and operational review. Projects 01 and 02 also need security decisions before deployment.
 
 ### Prioritized remediation backlog
 
