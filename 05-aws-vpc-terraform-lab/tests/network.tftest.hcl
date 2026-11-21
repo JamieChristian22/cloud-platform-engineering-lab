@@ -1,7 +1,5 @@
 # Mocked provider means these tests never contact AWS or create resources.
 mock_provider "aws" {
-  override_during = plan
-
   mock_data "aws_availability_zones" {
     defaults = {
       names = ["us-east-1a", "us-east-1b", "us-east-1c"]
