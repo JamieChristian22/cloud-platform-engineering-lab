@@ -28,8 +28,10 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: '1.9.8'
-      - name: Check formatting
-        run: terraform fmt -check -recursive
+      - name: Show Terraform formatting differences
+        run: |
+          terraform fmt -recursive
+          git diff --exit-code -- .
       - name: Initialize without backend
         run: terraform init -backend=false -input=false
       - name: Validate
