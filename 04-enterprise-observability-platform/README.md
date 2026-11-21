@@ -142,3 +142,7 @@ To reduce cost risk:
 ## Portfolio Value
 
 This project demonstrates that the platform is not only deployed, but also operated. It shows skills used by Cloud Engineers, Platform Engineers, DevOps Engineers, Cloud Operations Engineers, and SREs.
+
+## Terraform Encryption Security Baseline
+
+The [SNS Terraform security notes](terraform/SECURITY_NOTES.md) document the new AWS-managed SNS encryption key setting and the mocked CI / Checkov security tests. The Terraform root models one encrypted SNS topic and a sample dashboard; other operational exercises described above are not all implemented in that root. No AWS resources are deployed by this change.

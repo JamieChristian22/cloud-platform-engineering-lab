@@ -39,6 +39,9 @@ The environment uses a Shared Services VPC:
 - Private subnet: `10.10.2.0/24`
 - Internet Gateway for public subnet connectivity
 - Public route table for internet egress
+- Automatic public IPv4 assignment **disabled** in Terraform for safer future workloads
+- Private subnet explicitly associated with a route table that has no internet default route
+- Default VPC security group explicitly managed with no ingress or egress rules
 - Security group for controlled access
 
 Shared platform services include Systems Manager, Secrets Manager, ACM, ECR, CloudWatch Log Groups, and AWS Backup.
@@ -52,7 +55,7 @@ Required screenshots:
 - 01-shared-services-vpc.png
 - 02-public-subnet.png
 - 03-private-subnet.png
-- 04-public-ip-enabled.png
+- 04-public-ip-enabled.png (historical demonstration only; new Terraform configuration disables automatic public IPs)
 - 05-internet-gateway-created.png
 - 06-internet-gateway-attached.png
 - 07-route-table-created.png
@@ -98,3 +101,7 @@ Required screenshots:
 ## Cleanup Notes
 
 To reduce costs, stop or terminate any EC2 instances after screenshots, review AWS Backup recovery points, delete demo secrets if no longer needed, delete unused ECR repositories, and keep documentation/screenshots for GitHub evidence.
+
+## Current Terraform Security Baseline
+
+The updated [shared-services network security notes](terraform/SECURITY_NOTES.md) explain the Terraform security changes, mocked CI tests, and remaining log-encryption/retention/Flow Logs findings. This source configuration does **not** prove that live AWS resources are deployed or that current screenshots match the new code.

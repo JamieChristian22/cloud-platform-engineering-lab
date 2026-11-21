@@ -43,6 +43,12 @@ Each root has its own downloadable JSON artifact and a full findings summary in 
 
 All 34 findings remain **visible and unwaived** in the individual JSON artifacts from the GitHub Actions run. A successful *advisory* job means that Checkov ran and produced a parseable report; it **does not** mean that any failing security control passed.
 
+### Next remediation phase — Projects 03 and 04
+
+This phase updates shared-services Terraform to disable automatic public IPs, explicitly isolate its private subnet, and manage the default VPC security group with no rules. The enterprise observability Terraform SNS topic now specifies AWS-managed KMS encryption (`alias/aws/sns`). The new mocked tests and Checkov control gates cover these changes, while **remaining logging retention, KMS, and VPC Flow Logs findings stay visible**.
+
+The open landing-zone PR #3 already proposes overlapping changes to project 01, so this phase intentionally does not edit either project-01 Terraform root. Its high-priority public exposure, broad IAM and audit S3 deletion risks remain in that separate review queue.
+
 ### Prioritized remediation backlog
 
 1. **P1 — Exposure and access:** Revisit broad ingress/egress, auto-assigned public IPs, unscoped IAM permissions and default security-group rules. Do not open public ports for convenience. Existing application functionality must be reviewed before changing behavior.
