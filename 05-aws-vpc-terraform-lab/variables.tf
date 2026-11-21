@@ -30,3 +30,19 @@ variable "vpc_cidr" {
     error_message = "Use a 10.x.0.0/16 CIDR for this lab."
   }
 }
+
+variable "enable_flow_logs" {
+  description = "Opt in to AWS VPC Flow Logs, CloudWatch Logs, and an alarm. Defaults to false to avoid accidental costs."
+  type        = bool
+  default     = false
+}
+
+variable "flow_log_retention_days" {
+  description = "CloudWatch Logs retention when flow logging is explicitly enabled."
+  type        = number
+  default     = 7
+  validation {
+    condition     = contains([1, 3, 5, 7, 14, 30, 60, 90], var.flow_log_retention_days)
+    error_message = "Choose one of the supported lab retention periods: 1, 3, 5, 7, 14, 30, 60, or 90 days."
+  }
+}

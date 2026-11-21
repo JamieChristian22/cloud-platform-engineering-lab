@@ -36,3 +36,7 @@ jobs:
         run: terraform validate -no-color
       - name: Test network behavior using a mocked AWS provider
         run: terraform test -no-color
+      - name: Test offline VPC Flow Logs analyzer
+        run: python3 -m unittest discover -s observability -p 'test_*.py' -v
+      - name: Produce synthetic incident summary
+        run: python3 observability/analyze_flow_logs.py observability/sample-flow-logs.log

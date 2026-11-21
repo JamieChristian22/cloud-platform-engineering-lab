@@ -26,3 +26,13 @@ output "app_security_group_id" {
   description = "Security group ID for future private app-tier workloads."
   value       = aws_security_group.app.id
 }
+
+output "flow_logs_enabled" {
+  description = "Whether billable Flow Logs and CloudWatch resources are explicitly enabled."
+  value       = var.enable_flow_logs
+}
+
+output "flow_logs_group_name" {
+  description = "CloudWatch Logs destination, or null when disabled."
+  value       = var.enable_flow_logs ? aws_cloudwatch_log_group.vpc[0].name : null
+}
