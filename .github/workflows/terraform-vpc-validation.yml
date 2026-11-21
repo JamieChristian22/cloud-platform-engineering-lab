@@ -1,0 +1,38 @@
+name: Terraform VPC lab validation
+on:
+  pull_request:
+    paths:
+      - '05-aws-vpc-terraform-lab/**'
+      - '.github/workflows/terraform-vpc-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - '05-aws-vpc-terraform-lab/**'
+      - '.github/workflows/terraform-vpc-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: 05-aws-vpc-terraform-lab
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.8'
+      - name: Check formatting
+        run: terraform fmt -check -recursive
+      - name: Initialize with locked provider dependency
+        run: terraform init -backend=false -input=false -lockfile=readonly
+      - name: Validate
+        run: terraform validate -no-color
+      - name: Test network behavior using a mocked AWS provider
+        run: terraform test -no-color

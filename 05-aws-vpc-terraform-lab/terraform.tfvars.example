@@ -1,0 +1,4 @@
+aws_region   = "us-east-1"
+project_name = "platform-vpc-lab"
+environment  = "lab"
+vpc_cidr     = "10.20.0.0/16"
