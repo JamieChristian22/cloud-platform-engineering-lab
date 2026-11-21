@@ -55,18 +55,18 @@ resource "aws_s3_bucket_policy" "audit" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid = "AWSCloudTrailAclCheck"
-        Effect = "Allow"
+        Sid       = "AWSCloudTrailAclCheck"
+        Effect    = "Allow"
         Principal = { Service = "cloudtrail.amazonaws.com" }
-        Action = "s3:GetBucketAcl"
-        Resource = aws_s3_bucket.audit.arn
+        Action    = "s3:GetBucketAcl"
+        Resource  = aws_s3_bucket.audit.arn
       },
       {
-        Sid = "AWSCloudTrailWrite"
-        Effect = "Allow"
+        Sid       = "AWSCloudTrailWrite"
+        Effect    = "Allow"
         Principal = { Service = "cloudtrail.amazonaws.com" }
-        Action = "s3:PutObject"
-        Resource = "${aws_s3_bucket.audit.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
+        Action    = "s3:PutObject"
+        Resource  = "${aws_s3_bucket.audit.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
         Condition = { StringEquals = { "s3:x-amz-acl" = "bucket-owner-full-control" } }
       }
     ]
@@ -82,7 +82,7 @@ resource "aws_cloudwatch_log_group" "flow" {
 resource "aws_iam_role" "flow_logs" {
   name = "${local.name_prefix}-flow-logs-role"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [{ Effect = "Allow", Principal = { Service = "vpc-flow-logs.amazonaws.com" }, Action = "sts:AssumeRole" }]
   })
 }
@@ -93,8 +93,8 @@ resource "aws_iam_role_policy" "flow_logs" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
-      Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"]
+      Effect   = "Allow"
+      Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"]
       Resource = "*"
     }]
   })
