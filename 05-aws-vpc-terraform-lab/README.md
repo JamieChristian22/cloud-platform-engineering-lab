@@ -9,7 +9,8 @@ A cost-conscious, production-inspired networking case study for associate cloud/
 - Internet gateway and a public default route
 - Explicit private route table **without** a default internet route
 - Two workload security groups with HTTPS restricted to the VPC, and SG-to-SG app traffic on TCP 8080
-- Optional VPC Flow Logs, CloudWatch Logs, REJECT metric and alarm, all disabled by default\n- No EC2, NAT gateway, Elastic IP, or public IP auto-assignment
+- Optional VPC Flow Logs, CloudWatch Logs, REJECT metric and alarm, all disabled by default
+- No EC2, NAT gateway, Elastic IP, or public IP auto-assignment
 
 Public subnet means a subnet with a route to an internet gateway, **not** that its resources automatically have public IPs. This is a networking foundation, not a complete production landing zone.
 
@@ -51,7 +52,22 @@ See [the architecture and design decision guide](architecture/README.md) for the
 
 The lab also defines web/app workload security groups in `security.tf`. A web-tier policy allows HTTPS only from inside the VPC (TCP 443), the app-tier policy accepts TCP 8080 only from a workload carrying the web SG, and the web tier has an explicit TCP 8080 egress rule to the app SG. **Neither SG is attached to a workload**, and no publicly accessible service is created. See [security and routing incident exercises](docs/security-incident-runbook.md). The SG rules model intended policy; real AWS enforcement and removal of any implicit default egress must be verified before any future authorized live deployment.
 
-## Flow Logs and CloudWatch observability lab\n\nSee [offline VPC Flow Logs incident analysis and opt-in CloudWatch monitoring](observability/README.md). The `observability.tf` resources are **all disabled** when `enable_flow_logs = false` (the default). This project uses fabricated records for offline Python analysis and GitHub Actions tests; no live AWS monitoring is enabled or verified. Enabling the option and applying later could incur charges and requires a separate approved cost/permission review.\n\n## Case studies
+## Flow Logs and CloudWatch observability lab
+
+See [offline VPC Flow Logs incident analysis and opt-in CloudWatch monitoring](observability/README.md). The `observability.tf` resources are **all disabled** when `enable_flow_logs = false` (the default). This project uses fabricated records for offline Python analysis and GitHub Actions tests; no live AWS monitoring is enabled or verified. Enabling the option and applying later could incur charges and requires a separate approved cost/permission review.
+
+## Terraform IaC security review
+
+The [security assessment](security/SECURITY_ASSESSMENT.md) explains Checkov scanner findings, residual risks and the security guardrails. A separate GitHub Actions security workflow runs a pinned Checkov version in a disposable virtual environment **without AWS credentials**. Checkov's broad misconfiguration report is advisory during the initial assessment; a small, explicit local policy gate fails CI for known unsafe regressions (public SSH/ingress, inadvertently enabled CloudWatch resources, and unpinned GitHub Actions). Static scanning cannot prove live AWS compliance or eliminate every security risk.
+
+Run the guardrail and its unit tests offline (from this folder):
+
+```sh
+python3 security/policy_gate.py
+python3 -m unittest discover -s security -p 'test_*.py' -v
+```
+
+## Case studies
 1. **Private subnet egress failure:** an application cannot download packages from the internet. Explain that private route tables have no default route; choose an approved NAT or VPC endpoint design after cost review rather than opening everything.
 2. **Public subnet reachability:** a workload isn't reachable even with an IGW. Check public IP assignment, route tables, security groups, network ACLs, host firewall and application listener.
 3. **Availability-zone resilience:** identify why spreading subnets across two AZs helps and why a single NAT gateway in one AZ can still be a failure dependency.
@@ -62,7 +78,9 @@ The lab also defines web/app workload security groups in `security.tf`. A web-ti
 - Reviewers can trace VPC/subnet/route table relationships.
 - No default SSH ingress, NAT gateway or EC2 instance.
 - Web HTTPS ingress is VPC-only and internal app traffic uses SG-to-SG rules.
-- Mocked infrastructure security and opt-in monitoring assertions pass in CI.\n- Synthetic VPC Flow Logs analyzer unit tests pass in CI; no AWS credentials are needed.\n- Optional CloudWatch components remain disabled unless explicitly enabled.
+- Mocked infrastructure security and opt-in monitoring assertions pass in CI.
+- Synthetic VPC Flow Logs analyzer unit tests pass in CI; no AWS credentials are needed.
+- Optional CloudWatch components remain disabled unless explicitly enabled.
 - No secrets or state files committed.
 - Document any real deployment separately with redacted evidence and a cleanup checklist.
 
