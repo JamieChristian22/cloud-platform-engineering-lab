@@ -103,6 +103,8 @@ cloud-platform-engineering-lab/
 ├── 02-multi-account-governance-platform
 ├── 03-shared-services-platform
 ├── 04-enterprise-observability-platform
+├── 05-aws-vpc-terraform-lab
+├── docs
 ```
 
 ---
@@ -268,17 +270,19 @@ Typical evidence includes:
 
 # 🧪 Validation
 
-Examples:
+The source-level Terraform checks in GitHub Actions are **deployment-free**. See the [five-root legacy Terraform validation and Checkov security baseline](docs/legacy-terraform-root-validation.md) and the [isolated, more strictly tested AWS VPC Terraform lab](05-aws-vpc-terraform-lab/README.md).
+
+Each Terraform root is validated independently. For example, inside a chosen root:
 
 ```bash
-terraform fmt
-
+terraform fmt -check -diff
+terraform init -backend=false -input=false
 terraform validate
-
-terraform plan
-
-terraform apply
 ```
+
+The legacy roots use a five-root CI matrix and an advisory Checkov report. An advisory security scan can finish successfully even when misconfigurations remain; consult the report before any AWS deployment. The project 05 lab has separate mocked Terraform tests and stricter security gates.
+
+**Never run `terraform apply` or `terraform destroy` from these examples without separate, explicit cost, IAM, scope and cleanup approval.** No AWS infrastructure was deployed as part of these validation upgrades.
 
 ```bash
 kubectl get pods

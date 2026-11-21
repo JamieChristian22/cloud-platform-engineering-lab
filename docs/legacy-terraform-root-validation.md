@@ -28,7 +28,30 @@ The separate `.github/workflows/legacy-terraform-security.yml` workflow scans ea
 
 Each root has its own downloadable JSON artifact and a full findings summary in GitHub Actions. The scan **does not deploy AWS resources**, uses no AWS credentials, and fails if scanner output is incomplete or invalid. Existing policy findings are **advisory**, not fixed or silently ignored. CI passing means that a complete security scan ran, **not** that Checkov found zero problems.
 
-This audit is a first-pass code-security baseline. Its actual finding IDs, counts, and prioritization must be reviewed separately before treating older Terraform code as safe for live cloud use. Known areas of concern include public ingress, public IP auto assignment, NAT and EC2 costs, potential S3 audit-log deletion, and IAM policy breadth.
+### Actual security scan results
+
+[GitHub Actions run 44862770622](https://github.com/JamieChristian22/cloud-platform-engineering-lab/actions/runs/44862770622) scanned the five Terraform roots **independently** with Checkov 3.4.6. All five scanning jobs ran successfully, with no Checkov parsing errors. These are actual source findings, not deployed AWS resource observations.
+
+| Root | Checkov passed controls | Unremediated advisory findings | Investigate first |
+| --- | ---: | ---: | --- |
+| 01 basic landing zone | 8 | **6** | Public subnet IP assignment, internet-wide HTTP ingress, broad egress, unconfigured VPC flow logging/default SG |
+| 01 advanced landing zone | 63 | **18** | Public EC2/subnet exposure, broad IAM and SG rules, CloudTrail/S3/KMS controls, AZ selection, cost and recovery risks |
+| 02 governance | 1 | **0** | No Checkov findings in this minimal source root; privileged AWS Organizations actions are still high-impact |
+| 03 shared services | 7 | **9** | Public IP assignment, CloudWatch encryption and retention controls, default SG/flow logging |
+| 04 observability | 1 | **1** | SNS topic encryption policy |
+| **Total** | **80** | **34** | Findings are still open; no deployment has occurred |
+
+All 34 findings remain **visible and unwaived** in the individual JSON artifacts from the GitHub Actions run. A successful *advisory* job means that Checkov ran and produced a parseable report; it **does not** mean that any failing security control passed.
+
+### Prioritized remediation backlog
+
+1. **P1 — Exposure and access:** Revisit broad ingress/egress, auto-assigned public IPs, unscoped IAM permissions and default security-group rules. Do not open public ports for convenience. Existing application functionality must be reviewed before changing behavior.
+2. **P1 — Audit-log protection:** Review advanced landing-zone audit bucket deletion settings (`force_destroy=true`), CloudTrail and S3 policies, key management, event logging, and recovery/retention requirements.
+3. **P2 — Reliability and cost:** The advanced root creates a NAT gateway/EIP and EC2 resources, and has a single NAT failure dependency. Review two-AZ resilience and expected monthly charges before any live rollout.
+4. **P2 — Monitoring and retention:** Shared-services CloudWatch logging and VPC flow logging require policy decisions; the SNS topic in project 04 needs encryption review.
+5. **P2 — Reproducibility:** Add root-specific provider lock files and test expected network behavior using mocked Terraform providers before promoting a legacy root.
+
+Any security exception in a future production context must have an accountable reviewer, rationale, scope, compensating controls and review date. The status today is **validated Terraform source + advisory security findings**, not production approval.
 
 ## Why each command matters
 
