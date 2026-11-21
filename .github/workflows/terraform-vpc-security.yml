@@ -48,7 +48,7 @@ jobs:
           "${RUNNER_TEMP}/checkov-venv/bin/python" -m pip install --disable-pip-version-check --no-input 'checkov==3.4.6'
           "${RUNNER_TEMP}/checkov-venv/bin/checkov" --version
 
-      - name: Scan Terraform with Checkov (advisory full audit)
+      - name: Scan Terraform with Checkov (retain full JSON report)
         run: |
           mkdir -p "${RUNNER_TEMP}/checkov-results"
           "${RUNNER_TEMP}/checkov-venv/bin/checkov" \
@@ -58,7 +58,7 @@ jobs:
             --output json \
             --soft-fail > "${RUNNER_TEMP}/checkov-results/checkov.json"
 
-      - name: Summarize Checkov findings and validate report format
+      - name: Gate any new Checkov misconfigurations and summarize findings
         run: python3 05-aws-vpc-terraform-lab/security/summarize_checkov.py "${RUNNER_TEMP}/checkov-results/checkov.json"
 
       - name: Gate remediated Checkov controls

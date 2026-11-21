@@ -10,7 +10,7 @@
 - `terraform validate` checks Terraform configuration structure.
 - `terraform test -no-color` checks simulated network, security-group, routing and opt-in monitoring behavior.
 - `security/policy_gate.py` is a hard-failing local guardrail for specific regressions: permissive SG ingress/SSH, unexpected opt-in monitoring resource creation, unpinned Actions, and dangerous workflow triggers/deployment commands. This is intentionally narrow and should **not** be described as a full Terraform security scanner.
-- **Checkov 3.4.6**, installed into a temporary Python venv, conducts a broader Terraform IaC misconfiguration audit. The full report is uploaded as a GitHub Actions JSON artifact for reviewer inspection. The initial full scan is advisory (`--soft-fail`) while findings are triaged; **CI success does not mean Checkov found zero issues**.
+- **Checkov 3.4.6**, installed into a temporary Python venv, conducts a broader Terraform IaC misconfiguration audit. The full report is uploaded as a GitHub Actions JSON artifact for reviewer inspection. The full scan emits a JSON report with `--soft-fail` so evidence is retained. Its separate **blocking parser gate** fails on malformed scans or any finding not matching one of the two precisely documented unattached-security-group exceptions; the remediated Checkov policies are separately hard-gated. **CI success does not mean Checkov found zero issues**.
 - GitHub Actions uses read-only repository permissions, no persisted checkout credentials, immutable action commit SHAs, concurrency cancellation, and no AWS credentials. Checkov code itself is a pinned PyPI release, but its transitive dependencies are **not fully hash-locked**; supply-chain hardening remains an ongoing item.
 
 ## Threat model and key controls
@@ -40,7 +40,9 @@ Checkov 3.4.6 on source Terraform, with no cloud resources created.
 | `CKV2_AWS_5` | `aws_security_group.web` | Accepted lab limitation: no workload or ENI is created to attach the security group; attaching it requires a future separately reviewed workload module |
 | `CKV2_AWS_5` | `aws_security_group.app` | Same accepted lab limitation; document and verify attachment only when a workload exists |
 
-This preserves the two `CKV2_AWS_5` findings as **visible and unwaived** security review items. They should not be labeled fixed. Checkov's complete JSON report remains available in the GitHub Actions artifact.
+Follow-up run at commit `6b2a6e1` ([GitHub Actions security audit](https://github.com/JamieChristian22/cloud-platform-engineering-lab/actions/runs/44861539455)) verified **37 passed, 2 failed, 0 skipped, 0 parsing errors**. Both targeted `CKV_AWS_394` and `CKV2_AWS_12` controls now pass. All four repository workflows passed on that commit.
+
+This preserves the two `CKV2_AWS_5` findings as **visible, explicitly documented lab exceptions**, not fixes. Both exceptions are scoped to the exact Checkov ID and resource pair in `security/summarize_checkov.py`; a new finding or parse error fails CI. The exception owner is the repository maintainer and must be reviewed/removed before any future real workload or ENI attachment. Neither exception authorizes a production waiver. Checkov's full JSON report remains available in the GitHub Actions artifact.
 
 **Default SG safety note:** `aws_default_security_group` adopts the default SG of the new VPC; Terraform will remove default SG rules during a real apply. That can disrupt existing workloads if copied to an already in-use VPC, so this change is intended only for the new lab VPC (and is not deployed here).
 
@@ -54,7 +56,7 @@ Any future exception should be documented by check ID, relevant resource, risk, 
 
 ## Why this is a staged gate
 
-The broader Checkov scan intentionally reports all detected misconfigurations without forcing an early pass/fail decision. The narrowly specified regression gate is blocking. After reviewing the full Checkov results, high-impact issues should be fixed or explicitly accepted with documented reasoning, and enforceable Checkov checks promoted into the blocking gate. **Do not present an advisory result as a security clearance.**
+The Checkov scanner produces an unmodified complete report, and its JSON result is then compared to the **two explicit accepted lab exceptions**. Any unexpected issue or parsing error fails the build. In addition, the previously remediated `CKV_AWS_394` and `CKV2_AWS_12` checks have a dedicated Checkov hard gate, and `policy_gate.py` blocks a narrow set of security regressions. A passing scan still does not verify AWS account settings or actual network exposure; do not describe it as a security clearance.
 
 ## Run locally (no AWS resources)
 

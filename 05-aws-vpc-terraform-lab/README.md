@@ -60,10 +60,10 @@ See [offline VPC Flow Logs incident analysis and opt-in CloudWatch monitoring](o
 
 ## Terraform IaC security review
 
-The first Checkov scan found four policy issues. The zone-identity and VPC-default-security-group issues have been addressed in source code and will be retested by CI. Two unattached security-group findings remain deliberately visible because this lab doesn't deploy workloads. See the report for risk decisions and limitations.
+The first Checkov scan found four policy issues (35 passed, 4 flagged). After the zone-identity and VPC-default-security-group fixes, Checkov reported 37 passed and two flagged. Those two remaining `CKV2_AWS_5` findings are explicitly documented as unattached security-group limitations: this lab has no real workloads. The CI report still lists them, and any *new* Checkov finding or parse error fails the security workflow. See the security assessment for evidence and review criteria.
 
 
-The [security assessment](security/SECURITY_ASSESSMENT.md) explains Checkov scanner findings, residual risks and the security guardrails. A separate GitHub Actions security workflow runs a pinned Checkov version in a disposable virtual environment **without AWS credentials**. Checkov's broad misconfiguration report is advisory during the initial assessment; a small, explicit local policy gate fails CI for known unsafe regressions (public SSH/ingress, inadvertently enabled CloudWatch resources, and unpinned GitHub Actions). Static scanning cannot prove live AWS compliance or eliminate every security risk.
+The [security assessment](security/SECURITY_ASSESSMENT.md) explains Checkov scanner findings, residual risks and the security guardrails. A separate GitHub Actions security workflow runs a pinned Checkov version in a disposable virtual environment **without AWS credentials**. Checkov's broad report retains all findings, while a separate result gate fails on any new finding outside the two narrowly accepted lab exceptions. A local policy gate additionally blocks known unsafe regressions (public SSH/ingress, unexpectedly enabled CloudWatch resources and unpinned GitHub Actions). Static scanning cannot prove live AWS compliance or eliminate every security risk.
 
 Run the guardrail and its unit tests offline (from this folder):
 
