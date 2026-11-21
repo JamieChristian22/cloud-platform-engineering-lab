@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 LAB = Path(__file__).resolve().parents[1]
-ROOT = LAB.parent.parent
+ROOT = LAB.parent
 WORKFLOWS = (
     ROOT / ".github/workflows/terraform-vpc-validation.yml",
     ROOT / ".github/workflows/terraform-vpc-security.yml",
