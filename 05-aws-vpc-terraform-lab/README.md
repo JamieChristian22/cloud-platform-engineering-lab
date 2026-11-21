@@ -9,6 +9,8 @@ A cost-conscious, production-inspired networking case study for associate cloud/
 - Internet gateway and a public default route
 - Explicit private route table **without** a default internet route
 - Two workload security groups with HTTPS restricted to the VPC, and SG-to-SG app traffic on TCP 8080
+- The new VPC's default security group explicitly denies all ingress and egress
+- Two fixed Availability Zone IDs (defaults for us-east-1) to prevent silent zone changes
 - Optional VPC Flow Logs, CloudWatch Logs, REJECT metric and alarm, all disabled by default
 - No EC2, NAT gateway, Elastic IP, or public IP auto-assignment
 
@@ -57,6 +59,9 @@ The lab also defines web/app workload security groups in `security.tf`. A web-ti
 See [offline VPC Flow Logs incident analysis and opt-in CloudWatch monitoring](observability/README.md). The `observability.tf` resources are **all disabled** when `enable_flow_logs = false` (the default). This project uses fabricated records for offline Python analysis and GitHub Actions tests; no live AWS monitoring is enabled or verified. Enabling the option and applying later could incur charges and requires a separate approved cost/permission review.
 
 ## Terraform IaC security review
+
+The first Checkov scan found four policy issues. The zone-identity and VPC-default-security-group issues have been addressed in source code and will be retested by CI. Two unattached security-group findings remain deliberately visible because this lab doesn't deploy workloads. See the report for risk decisions and limitations.
+
 
 The [security assessment](security/SECURITY_ASSESSMENT.md) explains Checkov scanner findings, residual risks and the security guardrails. A separate GitHub Actions security workflow runs a pinned Checkov version in a disposable virtual environment **without AWS credentials**. Checkov's broad misconfiguration report is advisory during the initial assessment; a small, explicit local policy gate fails CI for known unsafe regressions (public SSH/ingress, inadvertently enabled CloudWatch resources, and unpinned GitHub Actions). Static scanning cannot prove live AWS compliance or eliminate every security risk.
 

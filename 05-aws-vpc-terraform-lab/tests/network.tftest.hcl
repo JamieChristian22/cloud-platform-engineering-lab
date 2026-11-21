@@ -55,6 +55,11 @@ run "two_az_network_layout" {
     condition     = length(aws_route_table.private.route) == 0
     error_message = "The private route table must not contain a default internet route."
   }
+
+  assert {
+    condition     = aws_default_security_group.locked_down.vpc_id == aws_vpc.lab.id
+    error_message = "The VPC default security group must be explicitly managed."
+  }
 }
 
 run "custom_private_network_cidr" {

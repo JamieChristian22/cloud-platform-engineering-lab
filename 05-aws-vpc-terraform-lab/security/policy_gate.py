@@ -61,6 +61,11 @@ def blocks(source: str, kind: str) -> list[str]:
 
 def issues_for_security_tf(content: str) -> list[str]:
     issues = []
+    defaults = blocks(content, "aws_default_security_group")
+    if len(defaults) != 1:
+        issues.append("security.tf: expected one managed locked-down default security group")
+    elif re.search(r"\b(?:ingress|egress)\s*\{", defaults[0]):
+        issues.append("security.tf: default security group must have no ingress or egress blocks")
     ingress = blocks(content, "aws_vpc_security_group_ingress_rule")
     if not ingress:
         issues.append("security.tf: expected security group ingress rules are missing")

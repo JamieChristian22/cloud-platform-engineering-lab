@@ -55,3 +55,12 @@ resource "aws_vpc_security_group_egress_rule" "web_to_app" {
   from_port                    = 8080
   to_port                      = 8080
 }
+
+# Adopt the VPC's automatically-created default SG and remove its default
+# inbound/outbound rules. The VPC in this lab is newly created; do not copy
+# this resource blindly into an existing production VPC without assessing users.
+resource "aws_default_security_group" "locked_down" {
+  vpc_id = aws_vpc.lab.id
+
+  tags = { Name = "${var.project_name}-default-deny" }
+}

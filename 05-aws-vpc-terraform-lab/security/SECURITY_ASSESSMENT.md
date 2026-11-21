@@ -27,6 +27,25 @@
 | CloudWatch Logs retention | Optional 7-day retention; may not meet regulated retention standards | **Known design limitation**; select approved retention before real workloads |
 | Network telemetry completeness | Flow Logs disabled by default and synthetic data used for demonstrations | **Known gap** for production observability |
 
+## Verified initial Checkov scan and remediation decisions
+
+First successful Checkov report from PR #7 at commit `fdd091f` (GitHub Actions security audit):
+**35 passed, 4 failed, 0 skipped, 0 parsing errors**. The report was generated with
+Checkov 3.4.6 on source Terraform, with no cloud resources created.
+
+| Checkov finding | Affected source | Decision |
+| --- | --- | --- |
+| `CKV_AWS_394` | `data.aws_availability_zones.available` | Remediate by constraining zone selection using explicit `zone-id` allowlist (not a broad `state=available` query) |
+| `CKV2_AWS_12` | `aws_vpc.lab` | Remediate by managing the newly created VPC's default security group with zero ingress/egress rules |
+| `CKV2_AWS_5` | `aws_security_group.web` | Accepted lab limitation: no workload or ENI is created to attach the security group; attaching it requires a future separately reviewed workload module |
+| `CKV2_AWS_5` | `aws_security_group.app` | Same accepted lab limitation; document and verify attachment only when a workload exists |
+
+This preserves the two `CKV2_AWS_5` findings as **visible and unwaived** security review items. They should not be labeled fixed. Checkov's complete JSON report remains available in the GitHub Actions artifact.
+
+**Default SG safety note:** `aws_default_security_group` adopts the default SG of the new VPC; Terraform will remove default SG rules during a real apply. That can disrupt existing workloads if copied to an already in-use VPC, so this change is intended only for the new lab VPC (and is not deployed here).
+
+**Zone ID portability note:** The default `use1-az1`/`use1-az2` IDs are for `us-east-1`. Users must select two supported zone IDs if they change `aws_region`; the CI mock cannot confirm real AWS account AZ availability.
+
 ## Findings triage
 
 The full Checkov scan's actual finding IDs and resource locations should be taken from the generated `aws-vpc-terraform-checkov-report` artifact on PR and main workflows. At creation, this document does **not** claim that every scanner finding is remediated or that the repository is free of security problems.

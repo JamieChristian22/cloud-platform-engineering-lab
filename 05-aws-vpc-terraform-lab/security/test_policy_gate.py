@@ -28,6 +28,18 @@ class SecurityPolicyTests(unittest.TestCase):
         variables = """variable "enable_flow_logs" { default = true }"""
         self.assertTrue(issues_for_observability_tf(config, variables))
 
+    def test_default_group_permission_is_blocked(self):
+        fake = """resource "aws_default_security_group" "locked_down" {
+          vpc_id = aws_vpc.lab.id
+          ingress { from_port = 0 }
+        }
+        resource "aws_vpc_security_group_ingress_rule" "web" {
+          from_port = 443
+          cidr_ipv4 = var.vpc_cidr
+        }"""
+        findings = issues_for_security_tf(fake)
+        self.assertTrue(any("default security group must have no" in item for item in findings))
+
     def test_unpinned_action_is_blocked(self):
         fake = """permissions:
   contents: read

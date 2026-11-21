@@ -61,6 +61,16 @@ jobs:
       - name: Summarize Checkov findings and validate report format
         run: python3 05-aws-vpc-terraform-lab/security/summarize_checkov.py "${RUNNER_TEMP}/checkov-results/checkov.json"
 
+      - name: Gate remediated Checkov controls
+        run: |
+          "${RUNNER_TEMP}/checkov-venv/bin/checkov" \
+            --directory 05-aws-vpc-terraform-lab \
+            --framework terraform \
+            --skip-download \
+            --check CKV_AWS_394,CKV2_AWS_12 \
+            --compact \
+            --quiet
+
       - name: Upload inspectable Checkov JSON results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
