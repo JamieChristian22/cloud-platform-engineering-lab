@@ -17,6 +17,8 @@
 
 </div>
 
+**💜 Support the work:** [Sponsor my public cloud-platform labs and documentation](https://github.com/sponsors/JamieChristian22). Support helps fund ongoing maintenance, examples, and clearer learning materials. The public MIT-licensed project remains accessible without sponsoring.
+
 ---
 
 # 📖 Overview
