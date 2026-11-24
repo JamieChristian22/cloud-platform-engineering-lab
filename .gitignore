@@ -216,3 +216,28 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local credentials and infrastructure artifacts (prevent accidental new tracking)
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfplan
+*.tfplan.*
+*.kubeconfig
+id_rsa
+id_ed25519
+.aws/credentials
+.kube/config
+terraform.rc
+.terraformrc
