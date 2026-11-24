@@ -1,5 +1,12 @@
 # ☁️ Cloud Platform Engineering Lab
 
+Platform engineering portfolio covering Terraform infrastructure as code, landing zones, shared services, Kubernetes, governance and observability across AWS, Azure and Google Cloud. These are production-inspired labs; inspect each project for implementation, test and deployment scope.
+
+**Explore related projects:** [AWS VPC Terraform lab](https://github.com/JamieChristian22/aws-vpc-terraform-lab) · [Multi-cloud DevOps projects](https://github.com/JamieChristian22/multi-cloud-devops-engineering-projects).
+
+[Recruiter quick-start guide](https://github.com/JamieChristian22/JamieChristian22/blob/main/RECRUITER_START_HERE.md) · [Portfolio website](https://jamiechristian22.github.io/)
+
+
 <div align="center">
 
 # Enterprise Cloud Platform Engineering Portfolio
@@ -41,7 +48,7 @@ The projects simulate real-world enterprise environments and emphasize:
 * Identity & Access Management
 * Operational Excellence
 
-The goal of this repository is to demonstrate production-ready cloud engineering skills expected of Platform Engineers, Cloud Engineers, Infrastructure Engineers, and DevOps Engineers.
+The goal of this repository is to demonstrate foundational and developing cloud engineering skills relevant to Platform Engineers, Cloud Engineers, Infrastructure Engineers, and DevOps Engineers.
 
 ---
 
